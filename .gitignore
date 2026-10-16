@@ -1,0 +1,12 @@
+# Data: keep folder structure, ignore contents
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.env

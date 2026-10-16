@@ -1,0 +1,19 @@
+# Scope
+scope:
+  state: CA
+  market: group
+  network_type: PPO
+
+# Paths (relative to repo root)
+paths:
+  raw: data/raw
+  index_files: data/raw/index_files
+  rate_files: data/raw/rate_files
+  nppes: data/raw/nppes
+  nucc: data/raw/nucc
+  reference: data/raw/reference
+  interim: data/interim
+  output: data/output
+
+# Thresholds
+thresholds: {}
