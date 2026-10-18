@@ -40,7 +40,7 @@ def main():
 
     prov = pd.read_csv(ind / "c5_providers_clean.csv", dtype=str, keep_default_na=False)
     cand = pd.read_csv(ind / "c5_candidates.csv", dtype=str, keep_default_na=False)
-    npi_info = pd.read_csv(ind / "c5_nppes_npi.csv", dtype=str, keep_default_na=False)
+    npi_info = pd.read_csv(ind / "c3_nppes_npi.csv", dtype=str, keep_default_na=False)
     final = pd.read_csv(ind / "c5_npi_tin_address_long.csv", dtype=str, keep_default_na=False)
     geo_path = ind / "c5_geocoded.csv"
     geo = pd.read_csv(geo_path, dtype=str, keep_default_na=False) if geo_path.exists() else None

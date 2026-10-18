@@ -66,3 +66,110 @@ stages:
       - data/interim/c2_name_status_final.csv
     outs:
       - data/output/c2_ppo_plans_ca.csv
+
+  # ---------------------------------------------------------------- C3 download
+  # Internet stage. persist: DVC keeps already-downloaded files, the script skips/resumes them.
+  # cache: false: the multi-GB rate files are not copied into the DVC cache.
+  c3_download:
+    cmd: python src/c3_download_in_network_files.py --input data/output/c2_ppo_plans_ca.csv --out-dir data/in-network-files
+    deps:
+      - src/c3_download_in_network_files.py
+      - data/output/c2_ppo_plans_ca.csv
+    outs:
+      - data/in-network-files:
+          persist: true
+          cache: false
+
+  # ---------------------------------------------------------------- C3 providers + NPPES (used by C3 grading and C5)
+  c3_extract_providers:
+    cmd: python src/c3_extract_providers.py --input data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json --out data/interim/c3_providers.csv
+    deps:
+      - src/c3_extract_providers.py
+      - data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+    outs:
+      - data/interim/c3_providers.csv
+
+  # Internet stage (NPPES API). persist: the script resumes from the rows already saved.
+  c3_nppes_lookup:
+    cmd: python src/c3_nppes_lookup.py --input data/interim/c3_providers.csv --out-dir data/interim
+    deps:
+      - src/c3_nppes_lookup.py
+      - data/interim/c3_providers.csv
+    outs:
+      - data/interim/c3_nppes_npi.csv:
+          persist: true
+      - data/interim/c3_nppes_addresses.csv:
+          persist: true
+
+  # ---------------------------------------------------------------- C3 grading
+  # Fixed grading date so the freshness score (and grade) is the same on every run.
+  c3_grade:
+    cmd: python src/c3_grade_files.py --log data/in-network-files/download_log.csv --nppes data/interim/c3_nppes_npi.csv --shoppable data/raw/reference/cms_70_shoppable_services.csv --grade-date 2026-10-18 --out-dir data/output
+    deps:
+      - src/c3_grade_files.py
+      - data/in-network-files/download_log.csv
+      - data/interim/c3_nppes_npi.csv
+      - data/raw/reference/cms_70_shoppable_services.csv
+    outs:
+      - data/output/c3_file_grades.csv
+      - data/output/c3_sensitivity.csv
+
+  # ---------------------------------------------------------------- C5 addresses
+  c5_ca_zip_reference:
+    cmd: python src/c5_ca_zip_reference.py --out data/reference/ca_zip_reference.csv
+    deps:
+      - src/c5_ca_zip_reference.py
+    outs:
+      - data/reference/ca_zip_reference.csv
+
+  c5_build_candidates:
+    cmd: python src/c5_build_candidates.py --providers data/interim/c3_providers.csv --nppes-dir data/interim --sources-dir data/raw/sources --out-dir data/interim
+    deps:
+      - src/c5_build_candidates.py
+      - src/c5_address_utils.py
+      - data/interim/c3_providers.csv
+      - data/interim/c3_nppes_npi.csv
+      - data/interim/c3_nppes_addresses.csv
+      - data/raw/sources
+    outs:
+      - data/interim/c5_providers_clean.csv
+      - data/interim/c5_candidates.csv
+      - data/interim/c5_addresses_to_geocode.csv
+
+  # Internet stage (Census geocoder). persist: the script resumes from addresses already geocoded.
+  c5_census_geocode:
+    cmd: python src/c5_census_geocode.py --input data/interim/c5_addresses_to_geocode.csv --out data/interim/c5_geocoded.csv
+    deps:
+      - src/c5_census_geocode.py
+      - data/interim/c5_addresses_to_geocode.csv
+    outs:
+      - data/interim/c5_geocoded.csv:
+          persist: true
+
+  c5_score_addresses:
+    cmd: python src/c5_score_addresses.py --in-dir data/interim --geocoded data/interim/c5_geocoded.csv --zip-ref data/reference/ca_zip_reference.csv --out-dir data/output
+    deps:
+      - src/c5_score_addresses.py
+      - src/c5_address_utils.py
+      - data/interim/c5_providers_clean.csv
+      - data/interim/c5_candidates.csv
+      - data/interim/c5_geocoded.csv
+      - data/reference/ca_zip_reference.csv
+    outs:
+      - data/interim/c5_address_scores.csv
+      - data/interim/c5_npi_tin_address_long.csv
+      - data/output/c5_npi_tin_address.csv
+
+  c5_report:
+    cmd: python src/c5_report.py --in-dir data/interim --out-dir data/output
+    deps:
+      - src/c5_report.py
+      - src/c5_score_addresses.py
+      - src/c5_address_utils.py
+      - data/interim/c5_providers_clean.csv
+      - data/interim/c5_candidates.csv
+      - data/interim/c3_nppes_npi.csv
+      - data/interim/c5_npi_tin_address_long.csv
+      - data/interim/c5_geocoded.csv
+    outs:
+      - data/output/c5_report.txt

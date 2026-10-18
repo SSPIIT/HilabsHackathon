@@ -34,7 +34,7 @@ Output keeps, for every (NPI, TIN), up to --top-k sites with score >= --min-scor
 kept with confidence "low" so no provider silently disappears.
 
 Inputs (from earlier steps, in --in-dir):
-  c5_providers_clean.csv, c5_candidates.csv, c5_nppes_npi.csv (optional),
+  c5_providers_clean.csv, c5_candidates.csv, c3_nppes_npi.csv (optional),
   c5_geocoded.csv (optional, from c5_census_geocode.py), ca_zip_reference.csv (optional)
 
 Outputs:
@@ -153,7 +153,7 @@ def main():
 
     prov = pd.read_csv(ind / "c5_providers_clean.csv", dtype=str, keep_default_na=False)
     cand = pd.read_csv(ind / "c5_candidates.csv", dtype=str, keep_default_na=False)
-    nppes = read_opt(ind / "c5_nppes_npi.csv")
+    nppes = read_opt(ind / "c3_nppes_npi.csv")
     geo = read_opt(args.geocoded or ind / "c5_geocoded.csv")
     zref = read_opt(args.zip_ref)
     print(f"providers {len(prov):,} pairs | candidates {len(cand):,} | "

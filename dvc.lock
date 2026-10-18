@@ -155,3 +155,93 @@ stages:
       hash: md5
       md5: 7090838dc727f7eddcc773f53c2118a8
       size: 119615
+  c3_download:
+    cmd: python src/c3_download_in_network_files.py --input 
+      data/output/c2_ppo_plans_ca.csv --out-dir data/in-network-files
+    deps:
+    - path: data/output/c2_ppo_plans_ca.csv
+      hash: md5
+      md5: 7090838dc727f7eddcc773f53c2118a8
+      size: 119615
+    - path: src/c3_download_in_network_files.py
+      hash: md5
+      md5: a983c94a3c28ac922933b103498f6507
+      size: 7274
+    outs:
+    - path: data/in-network-files
+      hash: md5
+      md5: 9f902c571fcbd3e9f6ead30130545359.dir
+      size: 701615797
+      nfiles: 2
+  c3_extract_providers:
+    cmd: python src/c3_extract_providers.py --input 
+      data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+      --out data/interim/c3_providers.csv
+    deps:
+    - path: 
+        data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+      hash: md5
+      md5: dfe6872bf471b907e5a199858000a10f
+      size: 701615514
+    - path: src/c3_extract_providers.py
+      hash: md5
+      md5: ccbfa51008779d89cfd8cb9479718ef3
+      size: 6282
+    outs:
+    - path: data/interim/c3_providers.csv
+      hash: md5
+      md5: be719ec1911657c12f3b708d2c02bbec
+      size: 522929
+  c3_nppes_lookup:
+    cmd: python src/c3_nppes_lookup.py --input data/interim/c3_providers.csv 
+      --out-dir data/interim
+    deps:
+    - path: data/interim/c3_providers.csv
+      hash: md5
+      md5: be719ec1911657c12f3b708d2c02bbec
+      size: 522929
+    - path: src/c3_nppes_lookup.py
+      hash: md5
+      md5: 9322965a43447a6429865aa5059fec84
+      size: 7574
+    outs:
+    - path: data/interim/c3_nppes_addresses.csv
+      hash: md5
+      md5: 470b0d5a1a17abf099ad216023005825
+      size: 904141
+    - path: data/interim/c3_nppes_npi.csv
+      hash: md5
+      md5: bda3a494106acc787b39310f8fc90595
+      size: 428458
+  c3_grade:
+    cmd: python src/c3_grade_files.py --log 
+      data/in-network-files/download_log.csv --nppes 
+      data/interim/c3_nppes_npi.csv --shoppable 
+      data/raw/reference/cms_70_shoppable_services.csv --grade-date 2026-10-18 
+      --out-dir data/output
+    deps:
+    - path: data/in-network-files/download_log.csv
+      hash: md5
+      md5: 587c668c4ae316c91e00a7a2de442364
+      size: 283
+    - path: data/interim/c3_nppes_npi.csv
+      hash: md5
+      md5: bda3a494106acc787b39310f8fc90595
+      size: 428458
+    - path: data/raw/reference/cms_70_shoppable_services.csv
+      hash: md5
+      md5: d66fedada9ea3b144204b3ea58bdd216
+      size: 5138
+    - path: src/c3_grade_files.py
+      hash: md5
+      md5: d0825dbf7075419beaf5d55dacdaed2b
+      size: 33062
+    outs:
+    - path: data/output/c3_file_grades.csv
+      hash: md5
+      md5: e3b3a2bba5d593385b3e9119f5a430c3
+      size: 1580
+    - path: data/output/c3_sensitivity.csv
+      hash: md5
+      md5: 0ef199121b7a41d507986fcf1b01eb48
+      size: 860

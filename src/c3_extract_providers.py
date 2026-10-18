@@ -20,7 +20,7 @@ Output columns (one row per unique NPI + TIN):
 
 Usage:
     pip install ijson pandas
-    python src/c5_extract_providers.py --input data/raw/rate_files/2026-09-30_..._healthnet-ca_in-network.json --out data/interim/c5_providers.csv
+    python src/c5_extract_providers.py --input data/raw/rate_files/2026-09-30_..._healthnet-ca_in-network.json --out data/interim/c3_providers.csv
 """
 
 import argparse
@@ -105,7 +105,7 @@ def scan_inline(path, col):
 def main():
     ap = argparse.ArgumentParser(description="C5: unique NPI/TIN pairs from a rate file")
     ap.add_argument("--input", required=True, type=Path, help="in-network rate file (.json)")
-    ap.add_argument("--out", default="data/interim/c5_providers.csv", type=Path)
+    ap.add_argument("--out", default="data/interim/c3_providers.csv", type=Path)
     ap.add_argument("--scan-inline", action="store_true",
                     help="also read provider_groups written inline in in_network (slower)")
     args = ap.parse_args()

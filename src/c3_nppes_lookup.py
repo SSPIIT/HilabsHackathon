@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """
-C5 step 2 - Look up every provider NPI from the rate file in the NPPES NPI Registry API.
+C3 step - Look up every provider NPI from the rate file in the NPPES NPI Registry API.
 
-Only the NPIs in c5_providers.csv (all providers in the Health Net CA rate file) are
+Only the NPIs in c3_providers.csv (all providers in the Health Net CA rate file) are
 looked up - no full NPPES download. The API is free and needs no key; run this on a
 machine with internet access.
+Used by C3 (R2 provider validity) and C5 (NPPES candidate addresses), so it runs in C3.
 
 Outputs
-  c5_nppes_npi.csv        one row per NPI:
+  c3_nppes_npi.csv        one row per NPI:
       npi, found, entity_type (1 individual / 2 organization), name, status,
       enumeration_date, last_updated, primary_taxonomy_code, primary_taxonomy_desc,
       n_addresses
-  c5_nppes_addresses.csv  one row per NPI x address (the candidate addresses for C5):
+  c3_nppes_addresses.csv  one row per NPI x address (the candidate addresses for C5):
       npi, address_source (nppes_location / nppes_mailing / nppes_practice_location),
       address_1, address_2, city, state, zip, phone, nppes_last_updated
 
-Re-running is safe: NPIs already in c5_nppes_npi.csv are skipped (resume after a stop).
+Re-running is safe: NPIs already in c3_nppes_npi.csv are skipped (resume after a stop).
 
 Usage:
     pip install requests pandas
-    python src/c5_nppes_lookup.py --input data/interim/c5_providers.csv --out-dir data/interim
+    python src/c3_nppes_lookup.py --input data/interim/c3_providers.csv --out-dir data/interim
 """
 
 import argparse
@@ -111,7 +112,7 @@ def parse(npi, data):
 
 def main():
     ap = argparse.ArgumentParser(description="NPPES API lookup for the rate-file NPIs")
-    ap.add_argument("--input", default="data/interim/c5_providers.csv", type=Path)
+    ap.add_argument("--input", default="data/interim/c3_providers.csv", type=Path)
     ap.add_argument("--out-dir", default="data/interim", type=Path)
     ap.add_argument("--delay", type=float, default=0.2, help="seconds between requests")
     ap.add_argument("--limit", type=int, default=0, help="only look up the first N NPIs (for testing)")
@@ -125,8 +126,8 @@ def main():
     print(f"{len(npis):,} valid unique NPIs to look up ({skipped} placeholder/invalid skipped)")
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    npi_path = args.out_dir / "c5_nppes_npi.csv"
-    addr_path = args.out_dir / "c5_nppes_addresses.csv"
+    npi_path = args.out_dir / "c3_nppes_npi.csv"
+    addr_path = args.out_dir / "c3_nppes_addresses.csv"
     done_rows = pd.read_csv(npi_path, dtype=str, keep_default_na=False) if npi_path.exists() else pd.DataFrame()
     done_addr = pd.read_csv(addr_path, dtype=str, keep_default_na=False) if addr_path.exists() else pd.DataFrame()
     done = set(done_rows.get("npi", []))

@@ -21,7 +21,7 @@ status), finds each file on disk, streams it, and grades it with the framework i
   Step 3  recall              mean of R1 code coverage (CMS 70 shoppable services),
                               R2 provider validity (share of the file's NPIs found in NPPES,
                               active and practising in California; read from
-                              data/interim/c5_nppes_npi.csv), R3 field fill rate,
+                              data/interim/c3_nppes_npi.csv), R3 field fill rate,
                               R4 structural integrity (broken links)
   Step 4  freshness           1.0 up to 35 days, linear to 0 at 120 days
   Step 5  score               F0.5 = 1.25PR/(0.25P+R); score = 100 x F0.5 x freshness;
@@ -44,7 +44,7 @@ Usage:
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv \
         --plans data/interim/c2_name_status.csv
-  R2 uses data/interim/c5_nppes_npi.csv automatically (built in C5). If that file is missing,
+  R2 uses data/interim/c3_nppes_npi.csv automatically (built in C5). If that file is missing,
   R2 is skipped with a warning and recall is the mean of R1, R3 and R4.
 
 Requires: ijson, pandas
@@ -569,8 +569,8 @@ def main():
     ap.add_argument("--rate-dir", type=Path, default=None, help="folder with the files (default: the log's folder)")
     ap.add_argument("--out-dir", type=Path, default=Path("data/output"))
     ap.add_argument("--shoppable", type=Path, default=Path("data/raw/reference/cms_70_shoppable_services.csv"))
-    ap.add_argument("--nppes", type=Path, default=Path("data/interim/c5_nppes_npi.csv"),
-                    help="C5 NPPES extract used for R2 (default: data/interim/c5_nppes_npi.csv)")
+    ap.add_argument("--nppes", type=Path, default=Path("data/interim/c3_nppes_npi.csv"),
+                    help="C5 NPPES extract used for R2 (default: data/interim/c3_nppes_npi.csv)")
     ap.add_argument("--plans", type=Path, default=None,
                     help="plan CSV with in_network_file_url; writes c3_plan_grades.csv")
     ap.add_argument("--grade-date", default=dt.date.today().isoformat(), help="YYYY-MM-DD (default today)")

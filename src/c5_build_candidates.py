@@ -4,10 +4,10 @@ C5 step 3 - Collect candidate addresses for every provider from all sources.
 
 Inputs
   --providers   the NPI/TIN list extracted from the rate file. Accepts:
-                  * CSV with columns npi, tin (e.g. c5_providers.csv), or
+                  * CSV with columns npi, tin (e.g. c3_providers.csv), or
                   * JSON in any shape that contains objects with "npi" and "tin"
                     (list of {npi, tin}, provider_groups, provider_references ...)
-  --nppes       c5_nppes_addresses.csv + c5_nppes_npi.csv from c5_nppes_lookup.py
+  --nppes       c3_nppes_addresses.csv + c3_nppes_npi.csv from c5_nppes_lookup.py
   --dac         (optional) CMS Doctors and Clinicians national file (CSV, downloaded
                 from data.cms.gov Provider Data Catalog); filtered to our NPIs
   --facility    (optional) CA Licensed & Certified Healthcare Facility Listing (CSV)
@@ -25,11 +25,11 @@ Outputs (in --out-dir)
                                 (columns id, street, city, state, zip, norm_key)
 
 Simplest usage - put every source CSV in data/raw/sources and run:
-    python src/c5_build_candidates.py --providers data/interim/c5_providers.csv --out-dir data/interim
+    python src/c5_build_candidates.py --providers data/interim/c3_providers.csv --out-dir data/interim
   (all CSVs in --sources-dir are loaded automatically; source date = file's saved date)
 
 Explicit usage:
-    python src/c5_build_candidates.py --providers data/interim/c5_providers.csv \
+    python src/c5_build_candidates.py --providers data/interim/c3_providers.csv \
         --nppes-dir data/interim --dac data/raw/sources/DAC_NationalDownloadableFile.csv \
         --facility data/raw/sources/ca_licensed_facilities.csv --out-dir data/interim
 """
@@ -284,7 +284,7 @@ def main():
     print(f"providers: {len(prov):,} (NPI, TIN) pairs, {len(npis):,} NPIs, {prov['tin'].nunique():,} TINs")
 
     frames = []
-    nppes_addr = Path(args.nppes_dir) / "c5_nppes_addresses.csv"
+    nppes_addr = Path(args.nppes_dir) / "c3_nppes_addresses.csv"
     if nppes_addr.exists():
         a = pd.read_csv(nppes_addr, dtype=str, keep_default_na=False)
         a = a[a["npi"].isin(npis)].rename(columns={"address_source": "source",
