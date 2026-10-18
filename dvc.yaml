@@ -1,0 +1,68 @@
+stages:
+  c1_parse:
+    cmd: python src/c1_parse_index.py --input data/raw/index_files --out data/interim/c1_index_raw.csv
+    deps:
+      - src/c1_parse_index.py
+      - data/raw/index_files
+    outs:
+      - data/interim/c1_index_raw.csv
+
+  c1_clean:
+    cmd: python src/c1_clean_index.py --input data/interim/c1_index_raw.csv --out-dir data/interim
+    deps:
+      - src/c1_clean_index.py
+      - data/interim/c1_index_raw.csv
+    outs:
+      - data/interim/c1_plans.csv
+      - data/interim/c1_cleaning_log.csv
+
+  c1_group_by_plan_id:
+    cmd: python src/c1_group_by_plan_id.py --input data/interim/c1_index_raw.csv --out data/interim/c1_by_plan_id
+    deps:
+      - src/c1_group_by_plan_id.py
+      - data/interim/c1_index_raw.csv
+    outs:
+      - data/interim/c1_by_plan_id_rows.csv
+      - data/interim/c1_by_plan_id_summary.csv
+
+  c2_filter_california:
+    cmd: python src/c2_filter_california.py --input data/interim/c1_plans.csv --out-dir data/interim
+    deps:
+      - src/c2_filter_california.py
+      - data/interim/c1_plans.csv
+    outs:
+      - data/interim/c2_plans_ca.csv
+      - data/interim/c2_plans_excluded.csv
+      - data/interim/c2_state_log.csv
+
+  c2_name_status:
+    cmd: python src/c2_name_keyword_status.py --input data/interim/c2_plans_ca.csv --out data/interim/c2_name_status.csv
+    deps:
+      - src/c2_name_keyword_status.py
+      - data/interim/c2_plans_ca.csv
+    outs:
+      - data/interim/c2_name_status.csv
+
+  c2_accept_eoa:
+    cmd: python src/c2_accept_eoa.py --input data/interim/c2_name_status.csv --out data/interim/c2_name_status_eoa.csv
+    deps:
+      - src/c2_accept_eoa.py
+      - data/interim/c2_name_status.csv
+    outs:
+      - data/interim/c2_name_status_eoa.csv
+
+  c2_manual_overrides:
+    cmd: python src/c2_manual_overrides.py --input data/interim/c2_name_status_eoa.csv --out data/interim/c2_name_status_final.csv
+    deps:
+      - src/c2_manual_overrides.py
+      - data/interim/c2_name_status_eoa.csv
+    outs:
+      - data/interim/c2_name_status_final.csv
+
+  c2_export_ppo_plans:
+    cmd: python src/c2_export_ppo_plans.py --input data/interim/c2_name_status_final.csv --out data/output/c2_ppo_plans_ca.csv --market group
+    deps:
+      - src/c2_export_ppo_plans.py
+      - data/interim/c2_name_status_final.csv
+    outs:
+      - data/output/c2_ppo_plans_ca.csv

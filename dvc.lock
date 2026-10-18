@@ -1,0 +1,157 @@
+schema: '2.0'
+stages:
+  c1_parse:
+    cmd: python src/c1_parse_index.py --input data/raw/index_files --out 
+      data/interim/c1_index_raw.csv
+    deps:
+    - path: data/raw/index_files
+      hash: md5
+      md5: 13a40207f801f3248d2bddc0ea4a1963.dir
+      size: 935566
+      nfiles: 3
+    - path: src/c1_parse_index.py
+      hash: md5
+      md5: f84fa9411c453a1c9bd0d085288c72f8
+      size: 7755
+    outs:
+    - path: data/interim/c1_index_raw.csv
+      hash: md5
+      md5: 8d6e167b35b975a985bfcb17d63064ff
+      size: 1450263
+  c1_clean:
+    cmd: python src/c1_clean_index.py --input data/interim/c1_index_raw.csv 
+      --out-dir data/interim
+    deps:
+    - path: data/interim/c1_index_raw.csv
+      hash: md5
+      md5: 8d6e167b35b975a985bfcb17d63064ff
+      size: 1450263
+    - path: src/c1_clean_index.py
+      hash: md5
+      md5: c410a0ee063ed5e3c6ffc8020460f197
+      size: 5203
+    outs:
+    - path: data/interim/c1_cleaning_log.csv
+      hash: md5
+      md5: 9bef3e55eb06c7b4cf889b4597a86c0d
+      size: 432
+    - path: data/interim/c1_plans.csv
+      hash: md5
+      md5: c515445937285ab6620b3621b6e54e0d
+      size: 1452359
+  c1_group_by_plan_id:
+    cmd: python src/c1_group_by_plan_id.py --input data/interim/c1_index_raw.csv
+      --out data/interim/c1_by_plan_id
+    deps:
+    - path: data/interim/c1_index_raw.csv
+      hash: md5
+      md5: 8d6e167b35b975a985bfcb17d63064ff
+      size: 1450263
+    - path: src/c1_group_by_plan_id.py
+      hash: md5
+      md5: ab74a29e1140e18ff69f7f15a9f3996b
+      size: 3257
+    outs:
+    - path: data/interim/c1_by_plan_id_rows.csv
+      hash: md5
+      md5: 8a2ac42d155aeaf0b78c1bca64402d79
+      size: 1466430
+    - path: data/interim/c1_by_plan_id_summary.csv
+      hash: md5
+      md5: 68719e0fdcca8b5b23c51c60b98aa0f9
+      size: 185519
+  c2_filter_california:
+    cmd: python src/c2_filter_california.py --input data/interim/c1_plans.csv 
+      --out-dir data/interim
+    deps:
+    - path: data/interim/c1_plans.csv
+      hash: md5
+      md5: c515445937285ab6620b3621b6e54e0d
+      size: 1452359
+    - path: src/c2_filter_california.py
+      hash: md5
+      md5: d92d10bcebe60ed2e832953551edde5d
+      size: 7381
+    outs:
+    - path: data/interim/c2_plans_ca.csv
+      hash: md5
+      md5: 27a4610a12a8d7882402f1060a932906
+      size: 753674
+    - path: data/interim/c2_plans_excluded.csv
+      hash: md5
+      md5: b0487cf8cb34dffdea37759a1b1eb663
+      size: 792403
+    - path: data/interim/c2_state_log.csv
+      hash: md5
+      md5: e49a15d17f4239d019d23dc9fd0dc6a7
+      size: 239
+  c2_name_status:
+    cmd: python src/c2_name_keyword_status.py --input 
+      data/interim/c2_plans_ca.csv --out data/interim/c2_name_status.csv
+    deps:
+    - path: data/interim/c2_plans_ca.csv
+      hash: md5
+      md5: 27a4610a12a8d7882402f1060a932906
+      size: 753674
+    - path: src/c2_name_keyword_status.py
+      hash: md5
+      md5: 3a4123e472ea897a7a29ef85cb17c81e
+      size: 3394
+    outs:
+    - path: data/interim/c2_name_status.csv
+      hash: md5
+      md5: 11d751e1a3897b843f46d2a6bfe9e1fc
+      size: 797371
+  c2_accept_eoa:
+    cmd: python src/c2_accept_eoa.py --input data/interim/c2_name_status.csv 
+      --out data/interim/c2_name_status_eoa.csv
+    deps:
+    - path: data/interim/c2_name_status.csv
+      hash: md5
+      md5: 11d751e1a3897b843f46d2a6bfe9e1fc
+      size: 797371
+    - path: src/c2_accept_eoa.py
+      hash: md5
+      md5: 768822dc44bc7ac2d2ffae82eeefd9ca
+      size: 2845
+    outs:
+    - path: data/interim/c2_name_status_eoa.csv
+      hash: md5
+      md5: bb3e964ae1636e6e12bd7123848b53a5
+      size: 792926
+  c2_manual_overrides:
+    cmd: python src/c2_manual_overrides.py --input 
+      data/interim/c2_name_status_eoa.csv --out 
+      data/interim/c2_name_status_final.csv
+    deps:
+    - path: data/interim/c2_name_status_eoa.csv
+      hash: md5
+      md5: bb3e964ae1636e6e12bd7123848b53a5
+      size: 792926
+    - path: src/c2_manual_overrides.py
+      hash: md5
+      md5: 25d8bcffaede743960b91a753e629399
+      size: 3802
+    outs:
+    - path: data/interim/c2_name_status_final.csv
+      hash: md5
+      md5: 465fe25c876341469de62f50bd5c8a9a
+      size: 799696
+  c2_export_ppo_plans:
+    cmd: python src/c2_export_ppo_plans.py --input 
+      data/interim/c2_name_status_final.csv --out 
+      data/output/c2_ppo_plans_ca.csv --market group
+    deps:
+    - path: data/interim/c2_name_status_final.csv
+      hash: md5
+      md5: 465fe25c876341469de62f50bd5c8a9a
+      size: 799696
+    - path: src/c2_export_ppo_plans.py
+      hash: md5
+      md5: 2307f081fd6ded5b73f48a57822eb039
+      size: 3197
+    outs:
+    - path: data/output/c2_ppo_plans_ca.csv
+      hash: md5
+      md5: 7090838dc727f7eddcc773f53c2118a8
+      size: 119615
