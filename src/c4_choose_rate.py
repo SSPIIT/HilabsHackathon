@@ -138,7 +138,7 @@ JOIN top USING ({svc}) JOIN cg USING ({svc});
 def main():
     ap = argparse.ArgumentParser(description="C4 step 2: one rate per provider and service")
     ap.add_argument("--input", default="data/interim/c4_rates_extracted.csv", type=Path)
-    ap.add_argument("--out", default="data/interim/c4_rates.csv", type=Path)
+    ap.add_argument("--out", default="data/output/c4_rates.csv", type=Path)
     ap.add_argument("--file-date", default="", help="rate file last_updated_on (YYYY-MM-DD), used by R3")
     args = ap.parse_args()
     if not args.input.exists():

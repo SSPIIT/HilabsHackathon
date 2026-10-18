@@ -125,12 +125,12 @@ stages:
 
   # --file-date = the rate file's last_updated_on (2026-10-06), used by the choice rule
   c4_choose_rate:
-    cmd: python src/c4_choose_rate.py --input data/interim/c4_rates_extracted.csv --out data/interim/c4_rates.csv --file-date 2026-10-06
+    cmd: python src/c4_choose_rate.py --input data/interim/c4_rates_extracted.csv --out data/output/c4_rates.csv --file-date 2026-10-06
     deps:
       - src/c4_choose_rate.py
       - data/interim/c4_rates_extracted.csv
     outs:
-      - data/interim/c4_rates.csv
+      - data/output/c4_rates.csv
 
   # ---------------------------------------------------------------- C5 addresses
   c5_ca_zip_reference:
@@ -164,10 +164,15 @@ stages:
       - data/interim/c5_geocoded.csv:
           persist: true
 
+  # Scoring, then the hand-checked manual addresses, in ONE stage: c5_manual_addresses.py edits
+  # the files c5_score_addresses.py writes, and DVC allows only one stage per output file.
   c5_score_addresses:
-    cmd: python src/c5_score_addresses.py --in-dir data/interim --geocoded data/interim/c5_geocoded.csv --zip-ref data/reference/ca_zip_reference.csv --out-dir data/output
+    cmd: >-
+      python src/c5_score_addresses.py --in-dir data/interim --geocoded data/interim/c5_geocoded.csv --zip-ref data/reference/ca_zip_reference.csv --out-dir data/output
+      && python src/c5_manual_addresses.py --final data/output/c5_npi_tin_address.csv --long data/interim/c5_npi_tin_address_long.csv --providers data/interim/c5_providers_clean.csv
     deps:
       - src/c5_score_addresses.py
+      - src/c5_manual_addresses.py
       - src/c5_address_utils.py
       - data/interim/c5_providers_clean.csv
       - data/interim/c5_candidates.csv
@@ -191,3 +196,14 @@ stages:
       - data/interim/c5_geocoded.csv
     outs:
       - data/output/c5_report.txt
+
+  # ---------------------------------------------------------------- C6 provider rate file
+  c6_build_rate_file:
+    cmd: python src/c6_build_rate_file.py --rates data/output/c4_rates.csv --addresses data/output/c5_npi_tin_address.csv --nppes data/interim/c3_nppes_npi.csv --out data/output/c6_provider_rate_file.csv
+    deps:
+      - src/c6_build_rate_file.py
+      - data/output/c4_rates.csv
+      - data/output/c5_npi_tin_address.csv
+      - data/interim/c3_nppes_npi.csv
+    outs:
+      - data/output/c6_provider_rate_file.csv

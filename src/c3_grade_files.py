@@ -16,8 +16,9 @@ status), finds each file on disk, streams it, and grades it with the framework i
                groups of 5+)                    P7 MS-DRG or place of service 21 marked outpatient
             P3 exact duplicate                  P8 expiration_date before the grading date
             P4 same code+provider+POS+modifier+class+additional_information, different amount
-  Revenue codes missing the leading zero ("110" for 0110) are padded before P5 and reported
-  separately as a format warning (rc_unpadded_codes), since the code is recoverable.
+  Revenue codes missing the leading zero ("110" for 0110) and CPT codes missing leading zeros
+  ("811" for anesthesia code 00811) are padded before P5 and reported separately as format
+  warnings (rc_unpadded_codes, cpt_unpadded_codes), since the code is recoverable.
   Step 3  recall              mean of R1 code coverage (CMS 70 shoppable services),
                               R2 provider validity (share of the file's NPIs found in NPPES,
                               active and practising in California; read from
@@ -44,7 +45,7 @@ Usage:
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv \
         --plans data/interim/c2_name_status.csv
-  R2 uses data/interim/c3_nppes_npi.csv automatically (built in C5). If that file is missing,
+  R2 uses data/interim/c3_nppes_npi.csv automatically (built by c3_nppes_lookup.py). If that file is missing,
   R2 is skipped with a warning and recall is the mean of R1, R3 and R4.
 
 Requires: ijson, pandas
@@ -290,6 +291,9 @@ def grade_rows_of_item(item, refs, st, grade_date, evergreen_missing):
     if ctype == "RC" and code.isdigit() and len(code) < 4:
         st["rc_unpadded_codes"] += 1               # e.g. "110" for 0110: repairable, warn only
         code = code.zfill(4)
+    elif ctype in ("CPT", "HCPCS") and code.isdigit() and len(code) < 5:
+        st["cpt_unpadded_codes"] += 1              # e.g. "811" for 00811 (anesthesia): repairable
+        code = code.zfill(5)
     shape = CODE_SHAPE.get(ctype)
     p5 = bool(code) and not code.upper().startswith("CSTM-") and shape is not None and not shape.match(code)
     rates = item.get("negotiated_rates") or []
@@ -401,7 +405,7 @@ def new_stats():
             "code_types": collections.Counter(), "arrangements": collections.Counter(),
             "rate_types": collections.Counter(), "covered": set(), "rows": 0,
             "check_rows": collections.Counter(), "attr_rows": collections.Counter(),
-            "unclean": collections.Counter(), "rc_unpadded_codes": 0, "fill_req": 0, "fill_ok": 0, "parse_error": ""}
+            "unclean": collections.Counter(), "rc_unpadded_codes": 0, "cpt_unpadded_codes": 0, "fill_req": 0, "fill_ok": 0, "parse_error": ""}
 
 
 def scan_file(path, grade_date, evergreen_missing):
@@ -608,6 +612,7 @@ def main():
                "unique_tins": len(st["tins"]), "provider_groups": st["groups_defined"],
                "remote_provider_refs": st["remote_refs"],
                "rc_unpadded_codes": st["rc_unpadded_codes"],
+               "cpt_unpadded_codes": st["cpt_unpadded_codes"],
                "network_names": "|".join(n for n, _ in st["networks"].most_common(10)), **res}
         grades.append(res)
         sens_rows += [{"file": name, **s} for s in sens]
@@ -621,6 +626,9 @@ def main():
             print(f"      {c} {CHECK_NAME[c]:<24} {st['check_rows'][c]:>12,}")
         if st["rc_unpadded_codes"]:
             print(f"  warning    : {st['rc_unpadded_codes']:,} revenue codes missing the leading zero "
+                  f"(padded, not counted in P5)")
+        if st["cpt_unpadded_codes"]:
+            print(f"  warning    : {st['cpt_unpadded_codes']:,} CPT codes missing leading zeros, e.g. 811 for 00811 "
                   f"(padded, not counted in P5)")
         print(f"  recall     : {res['recall']:.3f}  R1 {res['R1_code_coverage']} ({res['R1_professional']} pro, "
               f"{res['R1_drg']} DRG)  R2 {res['R2_provider_validity']}  R3 {res['R3_fill_rate']}  "

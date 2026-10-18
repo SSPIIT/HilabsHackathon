@@ -1,7 +1,9 @@
-# Data: keep folder structure, ignore contents
+# Data: keep folder structure, ignore contents (DVC tracks the data)
 data/**
 !data/**/
 !data/**/.gitkeep
+!data/**/*.dvc
+!data/**/.gitignore
 
 # Python
 __pycache__/
@@ -10,3 +12,13 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 .env
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Excel lock files and half-finished downloads
+~$*
+*.part
