@@ -165,6 +165,8 @@ GENERIC_COLS = {
              "Provider_City", "PROVIDER_CITY", "DBA_CITY", "Service_City"],
     "state": ["state", "st", "Rndrng_Prvdr_State_Abrvtn", "Recipient_State", "STATE", "State",
               "Provider_State", "PROVIDER_STATE", "Service_State"],
+    "src_lat": ["Latitude", "latitude", "LATITUDE", "lat", "LAT"],
+    "src_lon": ["Longitude", "longitude", "LONGITUDE", "lon", "LON", "lng"],
     "zip": ["zip", "ZIP Code", "Rndrng_Prvdr_Zip5", "Recipient_Zip_Code", "ZIP", "ZIP_CODE", "Zip",
             "Zip_Code", "Zip Code", "Provider_Zip", "PROVIDER_ZIP", "DBA_ZIP_CODE", "Service_Zip", "ZIP9"],
 }
@@ -200,7 +202,7 @@ def load_generic(name, path, npis, date, strict=True):
     head = pd.read_csv(path, encoding_errors="replace", low_memory=False, nrows=0).columns
     m = {k: pick(head, *v) for k, v in GENERIC_COLS.items()}
     for k in m:
-        if not m[k]:
+        if not m[k] and k not in ("src_lat", "src_lon"):
             m[k] = fuzzy_pick(head, k)
     if not m["npi"] or not m["address_1"]:
         msg = f"[{name}] could not find an NPI and an address column.\ncolumns found: {list(head)}"

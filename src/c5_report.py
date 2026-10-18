@@ -14,7 +14,7 @@ C5 report - the numbers to present for C5 (run after c5_score_addresses.py).
 
 Usage:
     python src/c5_report.py --in-dir data/interim --out-dir data/output
-    (writes data/output/c5_report.txt and data/output/c5_nppes_disagreements.csv)
+    (writes data/output/c5_report.txt and data/interim/c5_nppes_disagreements.csv)
 """
 
 import argparse
@@ -25,7 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from c5_address_utils import haversine_km, normalize_address  # noqa: E402
+from c5_address_utils import canonical_site_map, haversine_km, normalize_address  # noqa: E402
 from c5_score_addresses import parse_date  # noqa: E402
 
 NPPES = {"nppes_location", "nppes_practice_location", "nppes_mailing"}
@@ -41,12 +41,16 @@ def main():
     prov = pd.read_csv(ind / "c5_providers_clean.csv", dtype=str, keep_default_na=False)
     cand = pd.read_csv(ind / "c5_candidates.csv", dtype=str, keep_default_na=False)
     npi_info = pd.read_csv(ind / "c5_nppes_npi.csv", dtype=str, keep_default_na=False)
-    final = pd.read_csv(outd / "c5_npi_tin_address.csv", dtype=str, keep_default_na=False)
+    final = pd.read_csv(ind / "c5_npi_tin_address_long.csv", dtype=str, keep_default_na=False)
     geo_path = ind / "c5_geocoded.csv"
     geo = pd.read_csv(geo_path, dtype=str, keep_default_na=False) if geo_path.exists() else None
     latlon = {}
     if geo is not None:
         latlon = {k: (a, o) for k, a, o in zip(geo["norm_key"], geo["lat"], geo["lon"]) if a}
+    if "src_lat" in cand.columns:                       # source's own coordinates as fallback
+        for k, a, o in zip(cand["norm_key"], cand["src_lat"], cand["src_lon"]):
+            if a and o and k not in latlon:
+                latlon[k] = (a, o)
 
     lines = []
 
@@ -77,6 +81,8 @@ def main():
     cand["site"] = [normalize_address(a, b, c, d, z)["site_key"]
                     for a, b, c, d, z in zip(cand["address_1"], cand["address_2"], cand["city"],
                                              cand["state"], cand["zip"])]
+    canon = canonical_site_map(cand["site"])
+    cand["site"] = cand["site"].map(lambda k: canon.get(k, k))
     loc = cand[cand["source"] == "nppes_location"]
     other = cand[~cand["source"].isin(NPPES)]
     rows = []
@@ -127,7 +133,7 @@ def main():
             sub = chk[chk["age"] == b]
             if len(sub):
                 out(f"  updated {b:<8}: {len(sub):>5,} NPIs, NPPES differs for {(~sub['agree']).mean():.1%}")
-        chk[~chk["agree"]].to_csv(outd / "c5_nppes_disagreements.csv", index=False)
+        chk[~chk["agree"]].to_csv(ind / "c5_nppes_disagreements.csv", index=False)
 
     # 5 validity --------------------------------------------------------------------
     out("\n== 5. Census validation of primary addresses ==")
@@ -144,7 +150,7 @@ def main():
     (outd / "c5_report.txt").write_text("\n".join(lines), encoding="utf-8")
     print(f"\nwrote {outd / 'c5_report.txt'}")
     if not chk.empty:
-        print(f"wrote {outd / 'c5_nppes_disagreements.csv'}")
+        print(f"wrote {ind / 'c5_nppes_disagreements.csv'}")
 
 
 if __name__ == "__main__":

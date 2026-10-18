@@ -37,9 +37,13 @@ Inputs (from earlier steps, in --in-dir):
   c5_providers_clean.csv, c5_candidates.csv, c5_nppes_npi.csv (optional),
   c5_geocoded.csv (optional, from c5_census_geocode.py), ca_zip_reference.csv (optional)
 
-Outputs (in --out-dir):
-  c5_address_scores.csv      every (NPI, TIN, site) with all component scores
-  c5_npi_tin_address.csv     final mapping: top sites per (NPI, TIN)
+Outputs:
+  <out-dir>/c5_npi_tin_address.csv    FINAL: one row per (NPI, TIN) - provider info, then
+                                      addr1_* (highest confidence), addr2_*, addr3_*
+  <out-dir>/c5_npi_tin_address.xlsx   same, for Excel (NPI/TIN/ZIP kept as text)
+  <in-dir>/c5_npi_tin_address_long.csv  same data, one row per kept address (used by
+                                        c5_report.py and C6)
+  <in-dir>/c5_address_scores.csv        every (NPI, TIN, site) with all component scores
 
 Usage:
     python src/c5_score_addresses.py --in-dir data/interim --zip-ref data/reference/ca_zip_reference.csv --out-dir data/output
@@ -54,7 +58,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from c5_address_utils import haversine_km, normalize_address  # noqa: E402
+from c5_address_utils import canonical_site_map, haversine_km, normalize_address  # noqa: E402
 
 BASE_W = 0.60                         # every practice-address source, NPPES included
 SOURCE_W = {"nppes_mailing": 0.10}    # mailing address is not a practice location
@@ -84,6 +88,55 @@ def source_weight(source, source_date):
 def read_opt(path):
     p = Path(path)
     return pd.read_csv(p, dtype=str, keep_default_na=False) if p.exists() else None
+
+
+PROVIDER_COLS = ["npi", "tin", "business_name", "n_name_variants", "entity_type"]
+ADDR_COLS = ["address_1", "address_2", "city", "state", "zip", "census_address", "lat", "lon",
+             "score", "confidence", "sources", "n_sources", "A_agreement", "V_validity",
+             "T_tin_fit", "n_tin_npis_here", "validity_note", "flags", "n_tied_sites"]
+
+
+def make_wide(final, top_k):
+    """One row per (NPI, TIN): provider columns, n_addresses, then addr1_*, addr2_*, addr3_*."""
+    base = final[final["rank"] == 1][PROVIDER_COLS + ["n_candidate_sites"]].copy()
+    base["n_addresses"] = base.set_index(["npi", "tin"]).index.map(
+        final.groupby(["npi", "tin"]).size()).values
+    wide = base
+    for k in range(1, top_k + 1):
+        part = final[final["rank"] == k][["npi", "tin"] + ADDR_COLS]
+        wide = wide.merge(part.rename(columns={c: f"addr{k}_{c}" for c in ADDR_COLS}),
+                          on=["npi", "tin"], how="left")
+    return wide
+
+
+def write_final(wide, path):
+    """CSV + (if openpyxl is installed) an .xlsx where NPI/TIN/ZIP stay text."""
+    wide.to_csv(path, index=False)
+    try:
+        import openpyxl  # noqa: F401
+    except ImportError:
+        print("  (pip install openpyxl to also get an .xlsx that keeps leading zeros)")
+        return
+    num = [c for c in wide.columns if c.endswith(("_lat", "_lon", "_score", "_A_agreement",
+                                                  "_V_validity", "_T_tin_fit", "_n_sources"))]
+    out = wide.copy()
+    for c in num:
+        out[c] = pd.to_numeric(out[c], errors="coerce")
+    try:
+        with pd.ExcelWriter(path.with_suffix(".xlsx"), engine="openpyxl") as xw:
+            out.to_excel(xw, index=False, sheet_name="npi_tin_address")
+            ws = xw.sheets["npi_tin_address"]
+            ws.freeze_panes = "C2"
+            ws.auto_filter.ref = ws.dimensions
+            for i, c in enumerate(out.columns, 1):
+                col = ws.cell(row=1, column=i).column_letter
+                ws.column_dimensions[col].width = min(max(len(c), 10) + 2, 40)
+                if c not in num:
+                    for cell in ws[col][1:]:
+                        cell.number_format = "@"
+        print(f"wrote {path.with_suffix('.xlsx')}")
+    except PermissionError:
+        print(f"  !! could not write {path.with_suffix('.xlsx')} - close it in Excel and re-run")
 
 
 def main():
@@ -125,8 +178,18 @@ def main():
         n = normalize_address(r["address_1"], r["address_2"], r["city"], r["state"], r["zip"])
         w = source_weight(r["source"], r["source_date"])
         g = geo_by_key.get(r["norm_key"], ("", "", "", "", ""))
+        lat, lon = g[2], g[3]
+        if not lat and r.get("src_lat", "") and r.get("src_lon", ""):
+            lat, lon = r["src_lat"], r["src_lon"]          # source's own coordinates (e.g. Medi-Cal)
         recs.append({**r.to_dict(), "n": n, "w": w, "g_match": g[0], "g_type": g[1],
-                     "lat": g[2], "lon": g[3], "census_address": g[4]})
+                     "lat": lat, "lon": lon, "census_address": g[4]})
+
+    # same street written differently ("PK" vs "PKWY", truncated names) -> one site key
+    canon = canonical_site_map(rec["n"]["site_key"] for rec in recs)
+    merged = sum(1 for k, v in canon.items() if k != v)
+    for rec in recs:
+        rec["n"] = {**rec["n"], "site_key": canon.get(rec["n"]["site_key"], rec["n"]["site_key"])}
+    print(f"  street spellings merged into one site key: {merged:,}")
 
     # ---- group candidates into sites per NPI -----------------------------------------
     sites = collections.defaultdict(list)          # npi -> list of site dicts
@@ -218,16 +281,33 @@ def main():
                 "lat": s["lat"], "lon": s["lon"],
                 "sources": " | ".join(sorted(by_src)), "n_sources": len(by_family),
                 "A_agreement": round(A, 4), "V_validity": V, "validity_note": vnote,
-                "T_tin_fit": T if t_applicable else "", "score": score, "confidence": conf,
+                "T_tin_fit": T if t_applicable else "", "n_tin_npis_here": n_other,
+                "score": score, "confidence": conf,
                 "flags": " | ".join(flags),
             })
 
     scores = pd.DataFrame(rows)
     if scores.empty:
         sys.exit("no scored sites - check inputs")
-    scores = scores.sort_values(["npi", "tin", "score"], ascending=[True, True, False])
+    # ties (same score) are broken by: more NPIs of the same TIN at the site, more
+    # independent sources, better Census validity, then address (so the order is fixed)
+    scores = scores.sort_values(
+        ["npi", "tin", "score", "n_tin_npis_here", "n_sources", "V_validity", "address_1"],
+        ascending=[True, True, False, False, False, False, True])
     scores["rank"] = scores.groupby(["npi", "tin"]).cumcount() + 1
-    scores.to_csv(outd / "c5_address_scores.csv", index=False)
+    # flag when sites with exactly the same score were left out by the top-k cut
+    cut = scores[scores["rank"] == args.top_k + 1].set_index(["npi", "tin"])["score"]
+    last = scores[(scores["rank"] == args.top_k) & (scores["score"] >= args.min_score)].set_index(["npi", "tin"])["score"]
+    tied = set(last[last.index.isin(cut.index) & (last == cut.reindex(last.index))].index)
+    n_tied = scores.groupby(["npi", "tin", "score"]).size()
+    scores["n_candidate_sites"] = scores.groupby(["npi", "tin"])["rank"].transform("size")
+    is_tied = [(a, b) in tied and sc == last.get((a, b)) for a, b, sc in
+               zip(scores["npi"], scores["tin"], scores["score"])]
+    scores["flags"] = [(f + " | " if f else "") + "tied_sites_cut" if t else f
+                       for f, t in zip(scores["flags"], is_tied)]
+    scores["n_tied_sites"] = [n_tied[(a, b, sc)] if t else "" for t, a, b, sc in
+                              zip(is_tied, scores["npi"], scores["tin"], scores["score"])]
+    scores.to_csv(ind / "c5_address_scores.csv", index=False)
 
     keep = scores[(scores["score"] >= args.min_score) & (scores["rank"] <= args.top_k)]
     fallback = scores[(scores["rank"] == 1) & ~scores.set_index(["npi", "tin"]).index.isin(
@@ -236,8 +316,10 @@ def main():
     final["rank"] = final.groupby(["npi", "tin"]).cumcount() + 1
     cols = ["npi", "tin", "business_name", "n_name_variants", "entity_type", "rank", "address_1", "address_2", "city", "state",
             "zip", "census_address", "lat", "lon", "score", "confidence", "sources", "n_sources",
-            "A_agreement", "V_validity", "T_tin_fit", "validity_note", "flags"]
-    final[cols].to_csv(outd / "c5_npi_tin_address.csv", index=False)
+            "A_agreement", "V_validity", "T_tin_fit", "n_tin_npis_here", "validity_note", "flags", "n_tied_sites"]
+    final[cols].to_csv(ind / "c5_npi_tin_address_long.csv", index=False)
+    wide = make_wide(final[cols + ["n_candidate_sites"]], args.top_k)
+    write_final(wide, outd / "c5_npi_tin_address.csv")
 
     # ---- summary ----------------------------------------------------------------------
     pairs = prov[["npi", "tin"]].drop_duplicates()
@@ -253,9 +335,17 @@ def main():
     for name, cnt in src.explode().value_counts().items():
         print(f"    {name:<26} {cnt:>6,} ({cnt / len(prim):.1%})")
     print(f"  primary NOT reported by NPPES: {(~prim['sources'].str.contains('nppes_location|nppes_practice_location')).mean():.1%}")
-    print(f"  flags (all kept rows)    : {final['flags'].replace('', 'none').value_counts().to_dict()}")
-    print(f"\nwrote {outd / 'c5_address_scores.csv'}  ({len(scores):,} rows)")
-    print(f"wrote {outd / 'c5_npi_tin_address.csv'}  ({len(final):,} rows)")
+    print(f"  pairs where equally-scored sites were cut by top-{args.top_k}: {len(tied):,}")
+    fl = final["flags"].str.split(" | ", regex=False).explode()
+    fl = fl[fl != ""].value_counts().to_dict()
+    print(f"  flags (all kept rows)    : {fl}  (rows with no flag: {int((final['flags'] == '').sum()):,})")
+    if len(tied):
+        nt = pd.to_numeric(final["n_tied_sites"], errors="coerce").dropna()
+        print(f"  tied cuts: median {nt.median():.0f} equal sites, max {nt.max():.0f} "
+              f"(multi-site organisations - see n_tied_sites / n_candidate_sites)")
+    print(f"\nwrote {outd / 'c5_npi_tin_address.csv'}  ({len(wide):,} rows, one per NPI+TIN)  <- final")
+    print(f"wrote {ind / 'c5_npi_tin_address_long.csv'}  ({len(final):,} rows, one per address)")
+    print(f"wrote {ind / 'c5_address_scores.csv'}  ({len(scores):,} rows, all candidate sites)")
 
 
 if __name__ == "__main__":

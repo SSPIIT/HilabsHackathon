@@ -110,3 +110,56 @@ def haversine_km(lat1, lon1, lat2, lon2):
     dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
     h = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
     return 2 * r * math.asin(math.sqrt(h))
+
+
+DIRECTIONS = {"N", "S", "E", "W", "NE", "NW", "SE", "SW"}
+
+
+def _same_street(a, b, threshold=0.85):
+    """Fuzzy street match used only when house number and ZIP already agree.
+    Catches truncation / non-standard abbreviations ("SANTA MARGARITA PK" vs
+    "SANTA MARGARITA PKWY") but never merges different directions (N vs S) or
+    different numbered streets (5TH vs 6TH)."""
+    if a == b:
+        return True
+    if not a or not b:
+        return False
+    ta, tb = a.split(), b.split()
+    if {t for t in ta if t in DIRECTIONS} != {t for t in tb if t in DIRECTIONS}:
+        return False
+    if re.findall(r"\d+", a) != re.findall(r"\d+", b):
+        return False
+    if a.startswith(b) or b.startswith(a):
+        return True
+    return text_sim(a, b) >= threshold
+
+
+def canonical_site_map(site_keys):
+    """{site_key: canonical site_key}. Keys with the same house number and ZIP whose
+    streets are the same street written differently are mapped to the most common
+    spelling, so all scripts treat them as ONE site."""
+    import collections
+    counts = collections.Counter(k for k in site_keys if k)
+    buckets = collections.defaultdict(list)
+    for k in counts:
+        num, street, z = (k.split("|") + ["", "", ""])[:3]
+        if num and z:
+            buckets[(num, z)].append(k)
+    out = {k: k for k in counts}
+    for keys in buckets.values():
+        if len(keys) < 2:
+            continue
+        keys.sort(key=lambda k: -counts[k])          # most common spelling first
+        clusters = []
+        for k in keys:
+            st = k.split("|")[1]
+            for c in clusters:
+                if _same_street(st, c[0].split("|")[1]):
+                    c.append(k)
+                    break
+            else:
+                clusters.append([k])
+        for c in clusters:
+            for k in c:
+                out[k] = c[0]
+    return out

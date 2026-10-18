@@ -19,7 +19,9 @@ status), finds each file on disk, streams it, and grades it with the framework i
   Revenue codes missing the leading zero ("110" for 0110) are padded before P5 and reported
   separately as a format warning (rc_unpadded_codes), since the code is recoverable.
   Step 3  recall              mean of R1 code coverage (CMS 70 shoppable services),
-                              R2 provider coverage (needs --ca-npis), R3 field fill rate,
+                              R2 provider validity (share of the file's NPIs found in NPPES,
+                              active and practising in California; read from
+                              data/interim/c5_nppes_npi.csv), R3 field fill rate,
                               R4 structural integrity (broken links)
   Step 4  freshness           1.0 up to 35 days, linear to 0 at 120 days
   Step 5  score               F0.5 = 1.25PR/(0.25P+R); score = 100 x F0.5 x freshness;
@@ -41,7 +43,9 @@ Outputs (in --out-dir, default data/output):
 Usage:
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv
     python src/c3_grade_files.py --log data/in-network-files/download_log.csv \
-        --ca-npis data/interim/nppes_ca_npis.csv --plans data/interim/c2_name_status.csv
+        --plans data/interim/c2_name_status.csv
+  R2 uses data/interim/c5_nppes_npi.csv automatically (built in C5). If that file is missing,
+  R2 is skipped with a warning and recall is the mean of R1, R3 and R4.
 
 Requires: ijson, pandas
 """
@@ -164,6 +168,67 @@ def load_shoppable(path):
         sys.exit(f"shoppable services file not found: {path}  (pass --shoppable <path>)")
     df = pd.read_csv(path, dtype=str)
     return [(r.code_type, set(r.codes.split("|"))) for r in df.itertuples()]
+
+
+def _find_col(cols, *must, avoid=()):
+    """First column whose lower-case name contains every word in must and none in avoid."""
+    for c in cols:
+        lc = c.lower()
+        if all(m in lc for m in must) and not any(a in lc for a in avoid):
+            return c
+    return None
+
+
+def load_nppes(path):
+    """Read the C5 NPPES extract (NPIs from the rate files that were found in NPPES).
+
+    Returns (found, valid, note): found = every NPI found in NPPES, valid = NPIs that are
+    active and practise in California. Column names are matched loosely:
+      NPI           'npi' (exact), else the first column containing 'npi'
+      found         'found' (True/False): only found rows count; without it every row counts
+      status        'status': A = active
+      state         practice/location state, else any state column that is not mailing
+      deactivation  column containing 'deactiv'; reactivation column containing 'reactiv'
+    A check whose column is missing is skipped and named in the note.
+    """
+    if not path.exists():
+        print(f"WARNING: {path} not found - R2 skipped (recall = mean of R1, R3, R4)\n")
+        return None
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+    cols = list(df.columns)
+    npi_col = next((c for c in cols if c.lower().strip() == "npi"), None) or _find_col(cols, "npi")
+    if npi_col is None:
+        sys.exit(f"{path}: no NPI column found; columns are {cols}")
+    state_col = (_find_col(cols, "practice", "state", avoid=("mail",))
+                 or _find_col(cols, "location", "state", avoid=("mail",))
+                 or _find_col(cols, "state", avoid=("mail", "status")))
+    deact_col = _find_col(cols, "deactiv")
+    react_col = _find_col(cols, "reactiv")
+
+    found_col = next((c for c in cols if c.lower().strip() == "found"), None)
+    status_col = next((c for c in cols if c.lower().strip() in ("status", "npi_status")), None)
+
+    npi = df[npi_col].str.strip()
+    if found_col:   # the extract also lists NPIs that were looked up but not found
+        hit = df[found_col].str.strip().str.lower().isin({"true", "1", "yes", "y", "t"})
+        df, npi = df[hit], npi[hit]
+    ok = pd.Series(True, index=df.index)
+    if status_col:  # NPPES status: A = active
+        ok &= df[status_col].str.strip().str.upper().isin({"A", "ACTIVE"})
+    if state_col:
+        ok &= df[state_col].str.strip().str.upper().isin({"CA", "CALIFORNIA"})
+    if deact_col:
+        deact = pd.to_datetime(df[deact_col], errors="coerce")
+        react = pd.to_datetime(df[react_col], errors="coerce") if react_col else pd.Series(pd.NaT, index=df.index)
+        ok &= deact.isna() | (react.notna() & (react >= deact))
+    found, valid = set(npi[npi != ""]), set(npi[ok & (npi != "")])   # valid if any row is valid
+    note = (f"npi='{npi_col}', found={repr(found_col) if found_col else 'all rows'}, "
+            f"status={repr(status_col) if status_col else 'not checked'}, "
+            f"state={repr(state_col) if state_col else 'not checked'}, "
+            f"deactivation={repr(deact_col) if deact_col else 'not checked'}")
+    label = "active" + (" in CA" if state_col else "")
+    print(f"NPPES extract: {path} | {len(found):,} NPIs found, {len(valid):,} {label} | columns: {note}\n")
+    return {"found": found, "valid": valid, "note": note, "label": label}
 
 
 # --------------------------------------------------------------------------- #
@@ -396,7 +461,7 @@ def step0(st):
     return problems
 
 
-def score_file(st, grade_date, shoppable, ca_npis):
+def score_file(st, grade_date, shoppable, nppes):
     out = {}
     s0 = step0(st)
     upd = iso_date(st["header"].get("last_updated_on"))
@@ -435,7 +500,16 @@ def score_file(st, grade_date, shoppable, ca_npis):
     pro = [has(t, c) for t, c in shoppable if t == "CPT"]
     drg = [has(t, c) for t, c in shoppable if t == "MS-DRG"]
     r1 = (sum(pro) + sum(drg)) / (len(pro) + len(drg))
-    r2 = len(st["npis"] & ca_npis) / len(ca_npis) if ca_npis else None
+    # R2 provider validity: share of the file's NPIs that are real, active, California providers
+    file_npis = st["npis"]
+    if nppes is not None and file_npis:
+        r2 = len(file_npis & nppes["valid"]) / len(file_npis)
+        r2_parts = {"R2_npis_in_file": len(file_npis),
+                    "R2_valid_active_ca": len(file_npis & nppes["valid"]),
+                    "R2_not_in_nppes": len(file_npis - nppes["found"]),
+                    "R2_inactive_or_out_of_state": len((file_npis & nppes["found"]) - nppes["valid"])}
+    else:
+        r2, r2_parts = None, {}
     r3 = st["fill_ok"] / st["fill_req"] if st["fill_req"] else 0.0
     broken = [st["undefined_uses"] / st["ref_uses"] if st["ref_uses"] else 0.0,
               st["codes_without_rates"] / st["codes"] if st["codes"] else 0.0,
@@ -446,7 +520,8 @@ def score_file(st, grade_date, shoppable, ca_npis):
     recall = sum(comps) / len(comps)
     out.update(R1_code_coverage=round(r1, 4), R1_professional=f"{sum(pro)}/{len(pro)}",
                R1_drg=f"{sum(drg)}/{len(drg)}",
-               R2_provider_coverage=round(r2, 4) if r2 is not None else "not computed (no --ca-npis)",
+               R2_provider_validity=round(r2, 4) if r2 is not None else "not computed (no NPPES extract)",
+               **r2_parts,
                R3_fill_rate=round(r3, 4), R4_structural_integrity=round(r4, 4),
                R4_undefined_refs=st["undefined_uses"], R4_codes_without_rates=st["codes_without_rates"],
                R4_rates_without_providers=st["rates_without_providers"],
@@ -463,7 +538,7 @@ def score_file(st, grade_date, shoppable, ca_npis):
     # top 3 reasons for lost points
     losses = [(st["check_rows"][c] / rows if rows else 0, f"{c} {CHECK_NAME[c]}: {st['check_rows'][c]:,} rows")
               for c in CHECKS]
-    for name, v in (("R1 code coverage", r1), ("R2 provider coverage", r2), ("R3 fill rate", r3),
+    for name, v in (("R1 code coverage", r1), ("R2 provider validity", r2), ("R3 fill rate", r3),
                     ("R4 structural integrity", r4)):
         if v is not None:
             losses.append((1 - v, f"{name}: {v:.1%}"))
@@ -494,8 +569,8 @@ def main():
     ap.add_argument("--rate-dir", type=Path, default=None, help="folder with the files (default: the log's folder)")
     ap.add_argument("--out-dir", type=Path, default=Path("data/output"))
     ap.add_argument("--shoppable", type=Path, default=Path("data/raw/reference/cms_70_shoppable_services.csv"))
-    ap.add_argument("--ca-npis", type=Path, default=None,
-                    help="CSV with an 'npi' column: active California NPIs from NPPES (for R2)")
+    ap.add_argument("--nppes", type=Path, default=Path("data/interim/c5_nppes_npi.csv"),
+                    help="C5 NPPES extract used for R2 (default: data/interim/c5_nppes_npi.csv)")
     ap.add_argument("--plans", type=Path, default=None,
                     help="plan CSV with in_network_file_url; writes c3_plan_grades.csv")
     ap.add_argument("--grade-date", default=dt.date.today().isoformat(), help="YYYY-MM-DD (default today)")
@@ -506,9 +581,7 @@ def main():
     grade_date = dt.date.fromisoformat(args.grade_date)
     rate_dir = args.rate_dir or args.log.parent
     shoppable = load_shoppable(args.shoppable)
-    ca_npis = set()
-    if args.ca_npis:
-        ca_npis = set(pd.read_csv(args.ca_npis, dtype=str, usecols=["npi"])["npi"].str.strip())
+    nppes = load_nppes(args.nppes)
     log = pd.read_csv(args.log, dtype=str, keep_default_na=False)
     if not {"file", "status"}.issubset(log.columns):
         sys.exit(f"log must have columns file, status; has {list(log.columns)}")
@@ -527,7 +600,7 @@ def main():
             continue
         t0 = time.time()
         st = scan_file(path, grade_date, evergreen_missing=not args.evergreen_valid)
-        res, sens = score_file(st, grade_date, shoppable, ca_npis)
+        res, sens = score_file(st, grade_date, shoppable, nppes)
         res = {"file": name, "url": row.get("url", ""), "bytes": path.stat().st_size,
                "reporting_entity": st["header"].get("reporting_entity_name"),
                "version": st["header"].get("version"), "codes": st["codes"],
@@ -550,8 +623,12 @@ def main():
             print(f"  warning    : {st['rc_unpadded_codes']:,} revenue codes missing the leading zero "
                   f"(padded, not counted in P5)")
         print(f"  recall     : {res['recall']:.3f}  R1 {res['R1_code_coverage']} ({res['R1_professional']} pro, "
-              f"{res['R1_drg']} DRG)  R2 {res['R2_provider_coverage']}  R3 {res['R3_fill_rate']}  "
+              f"{res['R1_drg']} DRG)  R2 {res['R2_provider_validity']}  R3 {res['R3_fill_rate']}  "
               f"R4 {res['R4_structural_integrity']}")
+        if "R2_npis_in_file" in res:
+            print(f"  R2 detail  : {res['R2_valid_active_ca']:,} of {res['R2_npis_in_file']:,} NPIs {nppes['label']} | "
+                  f"{res['R2_not_in_nppes']:,} not in NPPES | "
+                  f"{res['R2_inactive_or_out_of_state']:,} not active" + (" or out of state" if "CA" in nppes['label'] else ""))
         print(f"  freshness  : {res['freshness']} ({res['age_days']} days)")
         print(f"  F0.5 {res['F0_5']:.3f} | F1 {res['F1']:.3f} | SCORE {res['score']} | GRADE {res['grade']}")
         print(f"  top reasons: {res['top_reasons']}")
