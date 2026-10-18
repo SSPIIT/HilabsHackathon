@@ -25,6 +25,9 @@ from pathlib import Path
 
 import ijson
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 COLUMNS = [
     "index_file",
     "brand",
@@ -156,7 +159,7 @@ def collect_inputs(inputs):
 def main():
     ap = argparse.ArgumentParser(description="C1: parse TiC index files into one raw table.")
     ap.add_argument("--input", nargs="+", required=True, help="index files and/or folders")
-    ap.add_argument("--out", default="data/interim/c1_index_raw.csv", help="output CSV path")
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c1_index_raw.csv"), help="output CSV path")
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1,
                     help="parallel processes (one index file per process)")
     args = ap.parse_args()

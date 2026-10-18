@@ -32,6 +32,9 @@ from pathlib import Path
 import ijson
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 
 def luhn_npi_ok(npi):
     """NPI check digit: Luhn over '80840' + first 9 digits."""
@@ -105,7 +108,7 @@ def scan_inline(path, col):
 def main():
     ap = argparse.ArgumentParser(description="C5: unique NPI/TIN pairs from a rate file")
     ap.add_argument("--input", required=True, type=Path, help="in-network rate file (.json)")
-    ap.add_argument("--out", default="data/interim/c3_providers.csv", type=Path)
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c3_providers.csv"), type=Path)
     ap.add_argument("--scan-inline", action="store_true",
                     help="also read provider_groups written inline in in_network (slower)")
     args = ap.parse_args()

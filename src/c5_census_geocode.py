@@ -37,6 +37,9 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 BATCH_URL = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
 ONELINE_URL = "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress"
 BENCHMARK = "Public_AR_Current"
@@ -106,7 +109,7 @@ def main():
     ap = argparse.ArgumentParser(description="Batch geocode addresses with the US Census Geocoder")
     ap.add_argument("--test", help="geocode one address string and print the result")
     ap.add_argument("--input", type=Path)
-    ap.add_argument("--out", type=Path, default=Path("data/interim/c5_geocoded.csv"))
+    ap.add_argument("--out", type=Path, default=str(PATHS["interim"] / "c5_geocoded.csv"))
     ap.add_argument("--batch-size", type=int, default=1000, help="rows per request (max 10000)")
     ap.add_argument("--id-col", default="id")
     ap.add_argument("--street-col", default="street")

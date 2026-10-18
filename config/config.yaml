@@ -9,9 +9,10 @@ paths:
   raw: data/raw
   index_files: data/raw/index_files
   rate_files: data/raw/rate_files
-  nppes: data/raw/nppes
-  nucc: data/raw/nucc
-  reference: data/raw/reference
+  reference: data/raw/reference          # downloaded reference files (CMS shoppable services, ...)
+  sources: data/raw/sources              # extra address sources for C5 (DAC, facilities, ...)
+  in_network_files: data/in-network-files
+  derived_reference: data/reference      # reference tables we build (CA ZIP reference)
   interim: data/interim
   output: data/output
 

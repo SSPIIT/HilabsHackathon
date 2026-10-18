@@ -18,6 +18,11 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 
 def join_unique(s):
     return " | ".join(sorted({str(x) for x in s if str(x)}))
@@ -25,8 +30,8 @@ def join_unique(s):
 
 def main():
     ap = argparse.ArgumentParser(description="Group raw index rows by plan_id.")
-    ap.add_argument("--input", default="data/interim/c1_index_raw.csv")
-    ap.add_argument("--out", default="data/interim/c1_by_plan_id",
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c1_index_raw.csv"))
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c1_by_plan_id"),
                     help="output path prefix (no extension)")
     args = ap.parse_args()
 

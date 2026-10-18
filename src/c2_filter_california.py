@@ -36,6 +36,9 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 TARGET = "CA"
 US_STATES = {
     "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID",
@@ -114,7 +117,7 @@ def decide(row, id_col, name_col, url_col):
 def main():
     ap = argparse.ArgumentParser(description="Keep only California plans from c1_plans.csv")
     ap.add_argument("--input", required=True, type=Path, help="c1_plans.csv from c1_clean_index.py")
-    ap.add_argument("--out-dir", default=Path("data/interim"), type=Path)
+    ap.add_argument("--out-dir", default=str(PATHS["interim"]), type=Path)
     ap.add_argument("--plan-id-col")
     ap.add_argument("--plan-name-col")
     ap.add_argument("--url-col")

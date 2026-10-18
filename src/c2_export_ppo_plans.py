@@ -21,13 +21,16 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 COLS = ["brand", "plan_name", "plan_id", "plan_market_type", "in_network_file_url"]
 
 
 def main():
     ap = argparse.ArgumentParser(description="Export accepted PPO plans with the C1 columns.")
-    ap.add_argument("--input", default="data/interim/c2_name_status_final.csv")
-    ap.add_argument("--out", default="data/output/c2_ppo_plans_ca.csv")
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c2_name_status_final.csv"))
+    ap.add_argument("--out", default=str(PATHS["output"] / "c2_ppo_plans_ca.csv"))
     ap.add_argument("--market", default="group", help='"group", "individual" or "all"')
     args = ap.parse_args()
 

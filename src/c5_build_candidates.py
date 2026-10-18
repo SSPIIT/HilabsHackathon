@@ -43,6 +43,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
 from c5_address_utils import normalize_address  # noqa: E402
 
 
@@ -262,7 +263,7 @@ def discover_sources(folder, npis):
 def main():
     ap = argparse.ArgumentParser(description="C5: build candidate addresses from all sources")
     ap.add_argument("--providers", required=True)
-    ap.add_argument("--nppes-dir", default="data/interim")
+    ap.add_argument("--nppes-dir", default=str(PATHS["interim"]))
     ap.add_argument("--dac")
     ap.add_argument("--dac-date", default="", help="release date of the DAC file, YYYY-MM-DD")
     ap.add_argument("--facility")
@@ -271,9 +272,9 @@ def main():
     ap.add_argument("--source", action="append", default=[],
                     help="name=path.csv[@YYYY-MM-DD]  any NPI-keyed CSV; columns auto-detected "
                          "(e.g. medicare_billing=data/raw/sources/MUP_PHY_by_provider.csv@2024-12-31)")
-    ap.add_argument("--sources-dir", default="data/raw/sources",
+    ap.add_argument("--sources-dir", default=str(PATHS["sources"]),
                     help="folder scanned for source CSVs when no --dac/--facility/--source is given")
-    ap.add_argument("--out-dir", default="data/interim")
+    ap.add_argument("--out-dir", default=str(PATHS["interim"]))
     args = ap.parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

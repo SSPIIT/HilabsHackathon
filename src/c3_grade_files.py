@@ -65,6 +65,9 @@ from urllib.parse import unquote, urlsplit
 import ijson
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 # --------------------------------------------------------------------------- #
 # Settings (defaults = the C3 doc; sensitivity variants change one at a time)
 # --------------------------------------------------------------------------- #
@@ -571,10 +574,10 @@ def main():
     ap = argparse.ArgumentParser(description="C3: grade in-network rate files listed in a download log")
     ap.add_argument("--log", required=True, type=Path, help="download_log.csv (url,file,bytes,status)")
     ap.add_argument("--rate-dir", type=Path, default=None, help="folder with the files (default: the log's folder)")
-    ap.add_argument("--out-dir", type=Path, default=Path("data/output"))
-    ap.add_argument("--shoppable", type=Path, default=Path("data/raw/reference/cms_70_shoppable_services.csv"))
-    ap.add_argument("--nppes", type=Path, default=Path("data/interim/c3_nppes_npi.csv"),
-                    help="C5 NPPES extract used for R2 (default: data/interim/c3_nppes_npi.csv)")
+    ap.add_argument("--out-dir", type=Path, default=str(PATHS["output"]))
+    ap.add_argument("--shoppable", type=Path, default=str(PATHS["reference"] / "cms_70_shoppable_services.csv"))
+    ap.add_argument("--nppes", type=Path, default=str(PATHS["interim"] / "c3_nppes_npi.csv"),
+                    help="C5 NPPES extract used for R2 (default: %(default)s)")
     ap.add_argument("--plans", type=Path, default=None,
                     help="plan CSV with in_network_file_url; writes c3_plan_grades.csv")
     ap.add_argument("--grade-date", default=dt.date.today().isoformat(), help="YYYY-MM-DD (default today)")

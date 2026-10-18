@@ -26,6 +26,9 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 LINE = "=" * 88
 
 # ---------------------------------------------------------------------------
@@ -189,7 +192,7 @@ def analyse_brand(name, g, id_col, name_col, url_col, n_examples):
 
 def main():
     ap = argparse.ArgumentParser(description="California analysis of c1_plans.csv")
-    ap.add_argument("--input", type=Path, default=Path("data/interim/c1_plans.csv"))
+    ap.add_argument("--input", type=Path, default=str(PATHS["interim"] / "c1_plans.csv"))
     ap.add_argument("--examples", type=int, default=3, help="example plan names per group")
     ap.add_argument("--plan-id-col")
     ap.add_argument("--plan-name-col")

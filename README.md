@@ -1,52 +1,75 @@
-# centene-ptd-pipeline
+# Provider Rate Pipeline – Centene / Health Net California PPO
 
-Pipeline for parsing Centene price-transparency (TiC) files, identifying PPO networks, grading file quality, extracting rates, mapping providers to addresses, and building the final rate file.
+Turns Centene's Transparency in Coverage files into one clean provider rate file for the
+**Health Net California commercial group PPO network**: who the provider is (NPI, TIN),
+where they practise (address) and what they are paid (rate).
+
+## Pipeline
+
+| Step | What it does | Main output |
+| --- | --- | --- |
+| **C1** | Parse Centene index files into one table, remove duplicates | `data/interim/c1_plans.csv` |
+| **C2** | Keep California, identify PPO plans (rule out HMO / EPO / POS) | `data/output/c2_ppo_plans_ca.csv` |
+| **C3** | Download the in-network rate file, look up NPIs in NPPES, grade file quality | `data/output/c3_file_grades.csv` |
+| **C4** | Extract rates, keep one rate per provider + service | `data/output/c4_rates.csv` |
+| **C5** | Map each NPI + TIN to up to 3 scored practice addresses | `data/output/c5_npi_tin_address.csv` |
+| **C6** | Join rates and addresses into the final file | `data/output/c6_provider_rate_file.csv` |
+| **C7** | Cost-effectiveness metrics vs similar providers (defined in the C7 logic doc) | – |
+
+Large files are streamed (never loaded whole), and stages that call outside services
+(downloads, NPPES API, Census geocoder) resume from saved progress.
 
 ## Setup
 
+Requires Python 3.12 and [Git LFS](https://git-lfs.com) (the source CSVs are stored with LFS).
+
 ```bash
+git lfs install
+git clone <repo-url>
+cd HilabsHackathon
+git lfs pull                      # only needed if LFS was installed after cloning
+
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+.venv\Scripts\activate            # Windows  (macOS/Linux: source .venv/bin/activate)
 pip install -r requirements.txt
 ```
 
-Scope, paths and thresholds live in `config/config.yaml`.
+## Run
+
+The pipeline is defined in `dvc.yaml`. Stages whose inputs have not changed are skipped.
+
+```bash
+dvc repro                         # everything
+dvc repro --glob "c3_*"           # one challenge (c1_* … c6_*)
+dvc dag                           # show how the stages connect
+```
+
+Shared paths and settings are in `config/config.yaml`.
 
 ## Data
 
-`data/` is git-ignored (except `.gitkeep`). Place inputs under `data/raw/`:
-
-| Folder | Contents |
-|---|---|
-| `index_files/` | Centene index JSONs |
-| `rate_files/` | Downloaded in-network files |
-| `nppes/` | NPPES NPI registry |
-| `nucc/` | NUCC taxonomy |
-| `reference/` | Specialty-to-billing-code Excel, CMS files |
-
-## Running
-
-Full pipeline (C1 → C6):
-
-```bash
-python run_pipeline.py
+```
+data/raw/index_files/         Centene index files used (Health Net, Ambetter)
+data/raw/extra_index_files/   QualChoice and Fidelis indexes, reviewed and out of scope
+data/raw/sources/             Address sources: CMS Doctors & Clinicians, Medi-Cal FFS, CA facilities
+data/raw/reference/           CMS 70 shoppable services (for C3)
+data/in-network-files/        Downloaded rate file (~700 MB, fetched by C3)
+data/interim/                 Intermediate tables
+data/output/                  Results
 ```
 
-Individual steps:
+Only **in-network** rate files are used: the PPO network is defined by negotiated rates,
+while allowed-amount files report past out-of-network payments.
 
-```bash
-python -m src.c1_parse_index         # index files -> data/interim/c1_index_raw.csv
-python -m src.c1_clean_index         # cleaning / dedup
-python -m src.c2_identify_ppo        # PPO network classification
-python -m src.c3_grade_files         # file quality metrics
-python -m src.c4_extract_rates       # stream rate files
-python -m src.c5_address_mapping     # TIN -> NPI -> address
-python -m src.c6_build_rate_file     # final Excel
-python -m src.c7_cost_effectiveness  # cost-effectiveness analysis
-```
+## Results
 
-## Docs
+- **C2:** 583 California group PPO plans, all pointing to one rate file
+- **C3:** file grade **A (96.2)**: precision 0.993, recall 0.852
+- **C4:** 1.51M price rows → 28,730 provider + service rates
+- **C5:** 99.8% of NPI + TIN pairs mapped to an address, 70.6% high confidence
 
-- `docs/logic.md` — deliverable 2
-- `docs/file_quality_metrics.md` — deliverable 3
-- `docs/summary.md` — deliverable 4
+## Documentation
+
+- PPO network and address mapping logic (C2, C5)
+- C3 – File Quality Metrics
+- C7 – Rate Cost-Effectiveness Logic

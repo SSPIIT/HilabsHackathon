@@ -58,6 +58,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
 from c5_address_utils import canonical_site_map, haversine_km, normalize_address  # noqa: E402
 
 BASE_W = 0.60                         # every practice-address source, NPPES included
@@ -141,10 +142,10 @@ def write_final(wide, path):
 
 def main():
     ap = argparse.ArgumentParser(description="C5: score addresses and map NPI/TIN to addresses")
-    ap.add_argument("--in-dir", default="data/interim")
+    ap.add_argument("--in-dir", default=str(PATHS["interim"]))
     ap.add_argument("--geocoded", default=None, help="default: <in-dir>/c5_geocoded.csv")
-    ap.add_argument("--zip-ref", default="data/reference/ca_zip_reference.csv")
-    ap.add_argument("--out-dir", default="data/output")
+    ap.add_argument("--zip-ref", default=str(PATHS["derived_reference"] / "ca_zip_reference.csv"))
+    ap.add_argument("--out-dir", default=str(PATHS["output"]))
     ap.add_argument("--top-k", type=int, default=3)
     ap.add_argument("--min-score", type=float, default=0.50)
     args = ap.parse_args()

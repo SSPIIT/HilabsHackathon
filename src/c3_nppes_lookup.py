@@ -32,6 +32,9 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 API = "https://npiregistry.cms.hhs.gov/api/"
 
 
@@ -112,8 +115,8 @@ def parse(npi, data):
 
 def main():
     ap = argparse.ArgumentParser(description="NPPES API lookup for the rate-file NPIs")
-    ap.add_argument("--input", default="data/interim/c3_providers.csv", type=Path)
-    ap.add_argument("--out-dir", default="data/interim", type=Path)
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c3_providers.csv"), type=Path)
+    ap.add_argument("--out-dir", default=str(PATHS["interim"]), type=Path)
     ap.add_argument("--delay", type=float, default=0.2, help="seconds between requests")
     ap.add_argument("--limit", type=int, default=0, help="only look up the first N NPIs (for testing)")
     args = ap.parse_args()

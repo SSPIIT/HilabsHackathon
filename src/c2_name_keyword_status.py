@@ -29,6 +29,11 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 PPO = re.compile(r"\bPPO\b", re.I)
 OTHER = re.compile(r"\b(?:HMO|EPO|POS)\b", re.I)
 
@@ -59,8 +64,8 @@ def status_and_reason(name):
 
 def main():
     ap = argparse.ArgumentParser(description="C2: accept/reject/pending from plan-name keywords.")
-    ap.add_argument("--input", default="data/interim/c1_plans.csv")
-    ap.add_argument("--out", default="data/interim/c2_name_status.csv")
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c1_plans.csv"))
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c2_name_status.csv"))
     args = ap.parse_args()
 
     df = pd.read_csv(args.input, dtype=str, keep_default_na=False)

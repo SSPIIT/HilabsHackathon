@@ -28,6 +28,11 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 VERIFIED_CENSUS = {"census_exact", "census_non_exact"}
 DEACTIVATED = {"1760410195"}          # confirmed deactivated in C5: not a linkable provider
 
@@ -46,8 +51,8 @@ def tin9(s):
 
 def main():
     ap = argparse.ArgumentParser(description="Coverage and linkage report")
-    ap.add_argument("--interim", default="data/interim", type=Path)
-    ap.add_argument("--output", default="data/output", type=Path)
+    ap.add_argument("--interim", default=str(PATHS["interim"]), type=Path)
+    ap.add_argument("--output", default=str(PATHS["output"]), type=Path)
     args = ap.parse_args()
     I, O = args.interim, args.output
     lines = []

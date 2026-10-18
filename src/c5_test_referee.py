@@ -31,6 +31,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
 from c5_address_utils import canonical_site_map, haversine_km, normalize_address  # noqa: E402
 
 SHORT = {"nppes": "NPPES", "cms_doctors_clinicians": "DAC (PECOS)",
@@ -39,7 +40,7 @@ SHORT = {"nppes": "NPPES", "cms_doctors_clinicians": "DAC (PECOS)",
 
 def main():
     ap = argparse.ArgumentParser(description="C5 referee test between address sources")
-    ap.add_argument("--in-dir", default="data/interim")
+    ap.add_argument("--in-dir", default=str(PATHS["interim"]))
     ap.add_argument("--min-cases", type=int, default=5, help="hide rows with fewer cases")
     args = ap.parse_args()
     ind = Path(args.in_dir)

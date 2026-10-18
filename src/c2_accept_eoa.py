@@ -23,13 +23,18 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 EOA = re.compile(r"\bEOA\b", re.I)
 
 
 def main():
     ap = argparse.ArgumentParser(description="C2: mark EOA plans as accepted (PPO tier).")
-    ap.add_argument("--input", default="data/interim/c2_name_status.csv")
-    ap.add_argument("--out", default="data/interim/c2_name_status_eoa.csv")
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c2_name_status.csv"))
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c2_name_status_eoa.csv"))
     ap.add_argument("--reason", default="EOA", help="text written to ppo_status_reason")
     args = ap.parse_args()
 

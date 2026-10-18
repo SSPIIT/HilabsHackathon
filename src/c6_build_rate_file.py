@@ -40,6 +40,9 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 DEACTIVATED = {"1760410195"}
 # NUCC taxonomy names for codes NPPES returned without a description
 TAXONOMY_NAMES = {
@@ -76,11 +79,11 @@ def tin9(s):
 
 def main():
     ap = argparse.ArgumentParser(description="C6: provider rate file at NPI x TIN x code x address level")
-    ap.add_argument("--rates", default="data/output/c4_rates.csv", type=Path)
-    ap.add_argument("--addresses", default="data/output/c5_npi_tin_address.csv", type=Path)
-    ap.add_argument("--nppes", default="data/interim/c3_nppes_npi.csv", type=Path,
+    ap.add_argument("--rates", default=str(PATHS["output"] / "c4_rates.csv"), type=Path)
+    ap.add_argument("--addresses", default=str(PATHS["output"] / "c5_npi_tin_address.csv"), type=Path)
+    ap.add_argument("--nppes", default=str(PATHS["interim"] / "c3_nppes_npi.csv"), type=Path,
                     help="NPPES lookup from C5 - gives the specialty (primary taxonomy)")
-    ap.add_argument("--out", default="data/output/c6_provider_rate_file.csv", type=Path)
+    ap.add_argument("--out", default=str(PATHS["output"] / "c6_provider_rate_file.csv"), type=Path)
     ap.add_argument("--min-confidence", choices=["low", "medium", "high"], default="low",
                     help="keep only addresses at or above this confidence (default: all)")
     args = ap.parse_args()
@@ -133,8 +136,8 @@ def main():
 
     # ---- 4. final format: NPI, TIN, Address, Billing Code, Specialty, Rate ------------
     spec = {}
-    if not args.nppes.exists() and Path("data/interim/c5_nppes_npi.csv").exists():
-        args.nppes = Path("data/interim/c5_nppes_npi.csv")        # older name
+    if not args.nppes.exists() and (PATHS["interim"] / "c5_nppes_npi.csv").exists():
+        args.nppes = PATHS["interim"] / "c5_nppes_npi.csv"        # older name
     if args.nppes.exists():
         n = pd.read_csv(args.nppes, dtype=str, keep_default_na=False)
         # NPPES sometimes returns the taxonomy code without its description: fill the name

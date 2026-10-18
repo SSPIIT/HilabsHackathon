@@ -32,6 +32,9 @@ from urllib.parse import unquote, urlsplit
 import pandas as pd
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 URL_COL = "in_network_file_url"
 CHUNK = 8 * 1024 * 1024          # 8 MB per write
 HEADERS = {"User-Agent": "Mozilla/5.0 (TiC hackathon downloader)"}
@@ -108,7 +111,7 @@ def download(url, out_dir, args):
 def main():
     ap = argparse.ArgumentParser(description="Download unique in-network rate files listed in a CSV.")
     ap.add_argument("--input", required=True, help="CSV with an in_network_file_url column")
-    ap.add_argument("--out-dir", default="data/in-network-files")
+    ap.add_argument("--out-dir", default=str(PATHS["in_network_files"]))
     ap.add_argument("--match", default="", help="only URLs containing this text (case-insensitive)")
     ap.add_argument("--workers", type=int, default=2, help="files downloaded at the same time")
     ap.add_argument("--retries", type=int, default=5)

@@ -25,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
 from c5_score_addresses import write_final  # noqa: E402
 
 # npi, tin, business name, address_1, address_2, city, zip, where it was found
@@ -60,9 +61,9 @@ def address_fields(npi, tin, name, a1, a2, city, zip5, source):
 
 def main():
     ap = argparse.ArgumentParser(description="C5: add manually found addresses")
-    ap.add_argument("--final", default="data/output/c5_npi_tin_address.csv", type=Path)
-    ap.add_argument("--long", default="data/interim/c5_npi_tin_address_long.csv", type=Path)
-    ap.add_argument("--providers", default="data/interim/c5_providers_clean.csv", type=Path)
+    ap.add_argument("--final", default=str(PATHS["output"] / "c5_npi_tin_address.csv"), type=Path)
+    ap.add_argument("--long", default=str(PATHS["interim"] / "c5_npi_tin_address_long.csv"), type=Path)
+    ap.add_argument("--providers", default=str(PATHS["interim"] / "c5_providers_clean.csv"), type=Path)
     args = ap.parse_args()
     for p in (args.final, args.long):
         if not p.exists():

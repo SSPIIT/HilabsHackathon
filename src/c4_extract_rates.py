@@ -38,6 +38,9 @@ from pathlib import Path
 
 import ijson
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 # CMS place-of-service codes billed as facility; all others = non-facility
 FACILITY_POS = {"19", "21", "22", "23", "24", "26", "31", "34", "41", "42", "51", "52",
                 "53", "56", "61"}
@@ -118,7 +121,7 @@ def peek(path, code, npi=""):
 def main():
     ap = argparse.ArgumentParser(description="C4 step 1: extract every negotiated price per provider")
     ap.add_argument("--input", required=True, type=Path)
-    ap.add_argument("--out", default="data/interim/c4_rates_extracted.csv", type=Path)
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c4_rates_extracted.csv"), type=Path)
     ap.add_argument("--limit-items", type=int, default=0, help="only the first N billing codes (test)")
     ap.add_argument("--peek", default="", help="print how one billing code is stored (e.g. 636), then stop")
     ap.add_argument("--peek-npi", default="", help="with --peek: only rate blocks whose groups hold this NPI")

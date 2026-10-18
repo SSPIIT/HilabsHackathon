@@ -23,6 +23,11 @@ from pathlib import Path
 
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 # plan_name -> (ppo_status, ppo_status_reason)   (manual review decisions)
 OVERRIDES = {
     "CA L CUSPPO 15/250/20% RAP":               ("accepted", "PPO keyword is present"),
@@ -37,8 +42,8 @@ def norm(name):
 
 def main():
     ap = argparse.ArgumentParser(description="C2: apply manual PPO status overrides.")
-    ap.add_argument("--input", default="data/interim/c2_name_status_eoa.csv")
-    ap.add_argument("--out", default="data/interim/c2_name_status_final.csv")
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c2_name_status_eoa.csv"))
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c2_name_status_final.csv"))
     args = ap.parse_args()
 
     df = pd.read_csv(args.input, dtype=str, keep_default_na=False)

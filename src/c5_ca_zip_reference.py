@@ -26,11 +26,16 @@ from pathlib import Path
 import pandas as pd
 import zipcodes
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 
 def main():
     ap = argparse.ArgumentParser(description="Offline California ZIP reference table")
     ap.add_argument("--state", default="CA")
-    ap.add_argument("--out", default="data/reference/ca_zip_reference.csv", type=Path)
+    ap.add_argument("--out", default=str(PATHS["derived_reference"] / "ca_zip_reference.csv"), type=Path)
     args = ap.parse_args()
 
     rows = []

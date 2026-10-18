@@ -33,6 +33,11 @@ import argparse
 from pathlib import Path
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 INVISIBLE = r"[ ​‌‍﻿]"
 DEDUP_KEY = ["brand", "plan_name_key", "plan_id", "plan_market_type", "in_network_file_url"]
 OUTPUT_COLS = ["brand", "plan_name", "plan_id", "plan_market_type", "in_network_file_url",
@@ -43,8 +48,8 @@ OUTPUT_COLS = ["brand", "plan_name", "plan_id", "plan_market_type", "in_network_
 
 def main():
     ap = argparse.ArgumentParser(description="C1: standardise + deduplicate the raw index table.")
-    ap.add_argument("--input", default="data/interim/c1_index_raw.csv")
-    ap.add_argument("--out-dir", default="data/interim")
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c1_index_raw.csv"))
+    ap.add_argument("--out-dir", default=str(PATHS["interim"]))
     args = ap.parse_args()
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)

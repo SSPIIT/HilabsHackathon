@@ -41,6 +41,9 @@ import sys
 from datetime import date
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 PLACEHOLDER_MAX = 999_999
 TELEHEALTH_MODIFIERS = ["95", "GT", "GQ", "93", "FQ"]     # all mean "delivered by telehealth"
 SERVICE = ("npi, tin, billing_code_type, billing_code, code_detail, modifiers, billing_class, "
@@ -152,8 +155,8 @@ JOIN top USING ({svc}) JOIN cg USING ({svc}) JOIN mods USING ({svc});
 
 def main():
     ap = argparse.ArgumentParser(description="C4 step 2: one rate per provider and service")
-    ap.add_argument("--input", default="data/interim/c4_rates_extracted.csv", type=Path)
-    ap.add_argument("--out", default="data/interim/c4_rates.csv", type=Path)
+    ap.add_argument("--input", default=str(PATHS["interim"] / "c4_rates_extracted.csv"), type=Path)
+    ap.add_argument("--out", default=str(PATHS["interim"] / "c4_rates.csv"), type=Path)
     ap.add_argument("--file-date", default="", help="rate file last_updated_on (YYYY-MM-DD), used by R3")
     args = ap.parse_args()
     if not args.input.exists():

@@ -27,6 +27,9 @@ from pathlib import Path
 import ijson
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
+
 
 def luhn_ok(npi):
     s = str(npi)
@@ -88,7 +91,7 @@ def summarise(path):
 def main():
     ap = argparse.ArgumentParser(description="Summarise rate files from a download log")
     ap.add_argument("--log", required=True, type=Path, help="download log CSV (url,file,bytes,status)")
-    ap.add_argument("--rate-dir", default=Path("data/raw/rate_files"), type=Path)
+    ap.add_argument("--rate-dir", default=str(PATHS["rate_files"]), type=Path)
     args = ap.parse_args()
 
     log = pd.read_csv(args.log, dtype=str, keep_default_na=False)

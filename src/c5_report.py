@@ -25,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pipeline_config import PATHS  # noqa: E402
 from c5_address_utils import canonical_site_map, haversine_km, normalize_address  # noqa: E402
 from c5_score_addresses import parse_date  # noqa: E402
 
@@ -33,8 +34,8 @@ NPPES = {"nppes_location", "nppes_practice_location", "nppes_mailing"}
 
 def main():
     ap = argparse.ArgumentParser(description="C5 summary report")
-    ap.add_argument("--in-dir", default="data/interim")
-    ap.add_argument("--out-dir", default="data/output")
+    ap.add_argument("--in-dir", default=str(PATHS["interim"]))
+    ap.add_argument("--out-dir", default=str(PATHS["output"]))
     args = ap.parse_args()
     ind, outd = Path(args.in_dir), Path(args.out_dir)
 
