@@ -1,5 +1,9 @@
 # Data: keep folder structure, ignore contents (DVC tracks the data)
 data/**
+!data/raw/index_files/**
+!data/raw/extra_index_files/**
+!data/raw/sources/**
+!data/raw/reference/**
 !data/**/
 !data/**/.gitkeep
 !data/**/*.dvc

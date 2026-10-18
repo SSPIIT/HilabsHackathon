@@ -1,0 +1,71 @@
+service_no,code_type,codes,description,category
+1,CPT,90832,"Psychotherapy, 30 min",Evaluation and Management
+2,CPT,90834,"Psychotherapy, 45 min",Evaluation and Management
+3,CPT,90837,"Psychotherapy, 60 min",Evaluation and Management
+4,CPT,90846,"Family psychotherapy, without patient, 50 min",Evaluation and Management
+5,CPT,90847,"Family psychotherapy, with patient, 50 min",Evaluation and Management
+6,CPT,90853,Group psychotherapy,Evaluation and Management
+7,CPT,99203,"New patient outpatient visit, ~30 min",Evaluation and Management
+8,CPT,99204,"New patient outpatient visit, ~45 min",Evaluation and Management
+9,CPT,99205,"New patient outpatient visit, ~60 min",Evaluation and Management
+10,CPT,99243,"Patient office consultation, ~40 min",Evaluation and Management
+11,CPT,99244,"Patient office consultation, ~60 min",Evaluation and Management
+12,CPT,99385,"New patient preventive exam, ages 18-39",Evaluation and Management
+13,CPT,99386,"New patient preventive exam, ages 40-64",Evaluation and Management
+14,CPT,80048,Basic metabolic panel,Laboratory and Pathology
+15,CPT,80053,Comprehensive blood chemistry panel,Laboratory and Pathology
+16,CPT,80055,Obstetric blood test panel,Laboratory and Pathology
+17,CPT,80061,Lipid blood test,Laboratory and Pathology
+18,CPT,80069,Kidney function panel,Laboratory and Pathology
+19,CPT,80076,Liver function panel,Laboratory and Pathology
+20,CPT,81000|81001,Manual urinalysis with microscopic exam,Laboratory and Pathology
+21,CPT,81002|81003,Automated urinalysis,Laboratory and Pathology
+22,CPT,84153|84154,Prostate-specific antigen (PSA),Laboratory and Pathology
+23,CPT,84443,Thyroid-stimulating hormone (TSH),Laboratory and Pathology
+24,CPT,85025,"Complete blood count with differential, automated",Laboratory and Pathology
+25,CPT,85027,"Complete blood count, automated",Laboratory and Pathology
+26,CPT,85610,Clotting time blood test,Laboratory and Pathology
+27,CPT,85730,Coagulation assessment blood test,Laboratory and Pathology
+28,CPT,70450,"CT head or brain, without contrast",Radiology
+29,CPT,70553,"MRI brain, before and after contrast",Radiology
+30,CPT,72110,"X-ray lower back, minimum four views",Radiology
+31,CPT,72148,MRI lower spinal canal,Radiology
+32,CPT,72193,"CT pelvis, with contrast",Radiology
+33,CPT,73721,MRI lower extremity joint,Radiology
+34,CPT,74177,"CT abdomen and pelvis, with contrast",Radiology
+35,CPT,76700,Abdominal ultrasound,Radiology
+36,CPT,76805,"Obstetric ultrasound, 14+ weeks, single or first fetus",Radiology
+37,CPT,76830,Transvaginal pelvic ultrasound,Radiology
+38,CPT,77065,"Mammogram, one breast",Radiology
+39,CPT,77066,"Mammogram, both breasts",Radiology
+40,CPT,77067,"Screening mammogram, bilateral",Radiology
+41,MS-DRG,216,"Cardiac valve/major cardiothoracic procedure with cardiac cath, with MCC",Medicine and Surgery
+42,MS-DRG,460,"Spinal fusion except cervical, without MCC",Medicine and Surgery
+43,MS-DRG,470,"Major joint replacement, lower extremity, without MCC",Medicine and Surgery
+44,MS-DRG,473,"Cervical spinal fusion, without CC/MCC",Medicine and Surgery
+45,MS-DRG,743,"Uterine/adnexa procedure for non-malignancy, without CC/MCC",Medicine and Surgery
+46,CPT,19120,"Removal of breast growth, open procedure",Medicine and Surgery
+47,CPT,29826,Endoscopic shoulder bone shaving,Medicine and Surgery
+48,CPT,29881,"Endoscopic knee cartilage removal, one",Medicine and Surgery
+49,CPT,42820,"Tonsil and adenoid removal, under age 12",Medicine and Surgery
+50,CPT,43235,"Endoscopic diagnostic exam, esophagus/stomach/upper small bowel",Medicine and Surgery
+51,CPT,43239,"Endoscopic biopsy, esophagus/stomach/upper small bowel",Medicine and Surgery
+52,CPT,45378,"Endoscopic diagnostic exam, large bowel",Medicine and Surgery
+53,CPT,45380,"Endoscopic biopsy, large bowel",Medicine and Surgery
+54,CPT,45385,Endoscopic removal of large bowel polyps or growths,Medicine and Surgery
+55,CPT,45391,"Endoscopic ultrasound, lower large bowel",Medicine and Surgery
+56,CPT,47562,Endoscopic gallbladder removal,Medicine and Surgery
+57,CPT,49505,"Groin hernia repair, age 5 or older",Medicine and Surgery
+58,CPT,55700,Prostate gland biopsy,Medicine and Surgery
+59,CPT,55866,Endoscopic prostate removal with surrounding lymph nodes,Medicine and Surgery
+60,CPT,59400,"Routine obstetric care, vaginal delivery",Medicine and Surgery
+61,CPT,59510,"Routine obstetric care, cesarean delivery",Medicine and Surgery
+62,CPT,59610,"Routine obstetric care, vaginal delivery after prior cesarean",Medicine and Surgery
+63,CPT,62322|62323,"Spinal canal injection, lower back/sacrum, with imaging guidance",Medicine and Surgery
+64,CPT,64483,"Lower/sacral spine nerve root injection, with imaging guidance",Medicine and Surgery
+65,CPT,66821,Laser removal of recurring cataract in lens capsule,Medicine and Surgery
+66,CPT,66984,Cataract removal with lens insertion,Medicine and Surgery
+67,CPT,93000,Routine electrocardiogram with interpretation and report,Medicine and Surgery
+68,CPT,93452,Left heart catheter insertion for diagnosis,Medicine and Surgery
+69,CPT,95810,Sleep study,Medicine and Surgery
+70,CPT,97110,"Physical therapy, therapeutic exercise",Medicine and Surgery
