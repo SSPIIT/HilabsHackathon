@@ -46,6 +46,23 @@ dvc dag                           # show how the stages connect
 
 Shared paths and settings are in `config/config.yaml`.
 
+## Dashboard
+
+An interactive dashboard (Streamlit) reads the pipeline outputs. Run the pipeline first.
+
+```bash
+streamlit run app.py
+```
+
+It opens in the browser at http://localhost:8501.
+
+| View | For | What it shows |
+| --- | --- | --- |
+| **Executive** | A quick overview | Headline numbers, the funnel from Centene's index to the final file, address confidence and verification, how each rate was chosen, top specialties |
+| **Analyst** | Detailed checks | Provider lookup (by NPI, TIN or name: addresses with sources and scores, every rate with the rule that kept it), code lookup (rate spread across providers), browse and filter the final file with CSV download, evidence tables for the address method |
+
+The theme is set to light in `.streamlit/config.toml`.
+
 ## Data
 
 ```

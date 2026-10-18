@@ -17,9 +17,13 @@ An NPI / pair counts as verified if ANY of its kept addresses (up to 3) is verif
 TIN linkage is reported two ways: TINs where at least one NPI is verified, and TINs where
 every NPI is verified.
 
+Part 0  Summary file: one row per headline metric (index files parsed, PPO plans and files,
+        file quality score, rates extracted, unique NPIs / TINs, share linked to a verified
+        address), written to data/output/summary_metrics.csv for the submission.
+
 Usage:
     python src/coverage_report.py
-    (writes data/output/coverage_report.txt)
+    (writes data/output/coverage_report.txt and data/output/summary_metrics.csv)
 """
 
 import argparse
@@ -55,7 +59,10 @@ def main():
     ap.add_argument("--output", default=str(PATHS["output"]), type=Path)
     args = ap.parse_args()
     I, O = args.interim, args.output
-    lines = []
+    lines, metrics = [], []
+
+    def metric(step, name, value, note=""):
+        metrics.append({"step": step, "metric": name, "value": value, "note": note})
 
     def out(s=""):
         print(s)
@@ -72,8 +79,15 @@ def main():
     ppo = load(O / "c2_ppo_plans_ca.csv")
     if ppo is None:
         ppo = load(I / "c2_ppo_plans_ca.csv")
+    c1raw = load(I / "c1_index_raw.csv")
+    if c1raw is not None and "index_file" in c1raw.columns:
+        n_idx = c1raw["index_file"].nunique()
+        out(f"C1  index files parsed                       : {n_idx:,}")
+        metric("C1", "index files parsed", n_idx, "out-of-scope QualChoice/Fidelis indexes reviewed separately")
+        metric("C1", "plan rows parsed", len(c1raw))
     if c1 is not None:
         out(f"C1  Centene index rows (all brands)          : {len(c1):,}")
+        metric("C1", "plan rows after duplicate removal", len(c1))
     if c2ca is not None:
         out(f"C2  California rows                          : {len(c2ca):,}")
     if c2st is not None and "ppo_status" in c2st.columns:
@@ -84,9 +98,13 @@ def main():
         id_col = next((c for c in ppo.columns if c.lower() == "plan_id"), None)
         out(f"C2  PPO group plans (rows)                   : {len(ppo):,}"
             + (f", {ppo[id_col].nunique():,} plan IDs" if id_col else ""))
+        metric("C2", "PPO plans identified (California, group)", len(ppo))
+        if id_col:
+            metric("C2", "PPO plan IDs", ppo[id_col].nunique())
         if url_col:
             urls = ppo[url_col].str.replace(r"\?.*$", "", regex=True)
             out(f"C2  distinct rate files those plans point to : {urls.nunique():,}")
+            metric("C2", "PPO in-network rate files identified", urls.nunique())
             for u, n in urls.value_counts().head(5).items():
                 out(f"      {n:>4} rows -> {u.split('/')[-1]}")
 
@@ -96,6 +114,23 @@ def main():
         raw["tin"] = raw["tin"].map(tin9)
         out(f"C3  (NPI, TIN) pairs in the rate file        : {len(raw[['npi', 'tin']].drop_duplicates()):,} "
             f"({raw['npi'].nunique():,} NPIs, {raw['tin'].nunique():,} TINs)")
+        metric("C3", "unique NPIs in the rate file", raw["npi"].nunique())
+        metric("C3", "unique TINs in the rate file", raw["tin"].nunique())
+        metric("C3", "unique NPI + TIN pairs", len(raw[["npi", "tin"]].drop_duplicates()))
+    grades = load(O / "c3_file_grades.csv")
+    if grades is not None:
+        for g in grades.itertuples():
+            out(f"C3  file quality {g.file[:50]}: score {g.score}, grade {g.grade} "
+                f"(precision {g.precision}, recall {g.recall})")
+            metric("C3", "file quality score", g.score, g.file)
+            metric("C3", "file quality grade", g.grade, g.file)
+            metric("C3", "precision / recall", f"{g.precision} / {g.recall}", g.file)
+    nppes0 = load(I / "c3_nppes_npi.csv")
+    if nppes0 is not None and raw is not None:
+        ok = nppes0[(nppes0["found"].astype(str) == "True") & (nppes0["status"] == "A")]["npi"]
+        n_all = raw["npi"].nunique()
+        out(f"C3  NPIs found and active in NPPES           : {pct(ok.nunique(), n_all)}")
+        metric("C3", "NPIs found and active in NPPES", ok.nunique(), f"{ok.nunique() / n_all:.1%} of {n_all:,}")
         if "npi_valid" in raw.columns:
             bad = raw[raw["npi_valid"].str.lower() != "true"]
             out(f"      of which NPI fails the check digit / is a placeholder: {bad['npi'].nunique():,} "
@@ -105,6 +140,7 @@ def main():
     if ext is not None:
         out(f"C4  extracted price rows                     : {len(ext):,} "
             f"({ext['npi'].nunique():,} NPIs, {ext['billing_code'].nunique():,} codes)")
+        metric("C4", "price rows extracted", len(ext))
         del ext
     c4 = load(O / "c4_rates.csv")
     if c4 is None:
@@ -113,6 +149,8 @@ def main():
         c4["tin"] = c4["tin"].map(tin9)
         out(f"C4  provider + service rates (one per key)   : {len(c4):,} "
             f"({c4['npi'].nunique():,} NPIs, {len(c4[['npi', 'tin']].drop_duplicates()):,} NPI+TIN)")
+        metric("C4", "rates kept (one per provider + service)", len(c4))
+        metric("C4", "billing codes with a kept rate", c4["billing_code"].nunique())
         bad = c4[~c4["npi"].str.fullmatch(r"\d{10}")]
         if len(bad):
             out(f"      rates with placeholder NPI (e.g. 0)    : {len(bad):,} rows, {bad['tin'].nunique():,} TINs "
@@ -125,6 +163,7 @@ def main():
             f"({len(long):,} addresses kept)")
     c6 = load(O / "c6_provider_rate_file.csv")
     if c6 is not None:
+        metric("C6", "final provider rate file rows", len(c6), "NPI x TIN x address x billing code")
         out(f"C6  final rows (NPI x TIN x address x code)  : {len(c6):,} "
             f"({c6['NPI'].nunique():,} NPIs, {len(c6[['NPI', 'TIN']].drop_duplicates()):,} NPI+TIN, "
             f"{c6['Billing Code'].nunique():,} codes)")
@@ -150,9 +189,7 @@ def main():
     if long is None:
         out("c5_npi_tin_address_long.csv not found - run C5 first")
     else:
-        nppes = load(I / "c3_nppes_npi.csv")
-        if nppes is None:
-            nppes = load(I / "c5_nppes_npi.csv")
+        nppes = nppes0
         etype = dict(zip(nppes["npi"], nppes["entity_type"])) if nppes is not None else {}
 
         n_src = pd.to_numeric(long["n_sources"], errors="coerce").fillna(0)
@@ -182,20 +219,24 @@ def main():
         out("\nVERIFIED = >= 2 independent sources + Census match, or manual lookup with a cited source\n")
         out(f"{'level':<28} {'with address':>22} {'verified (any addr)':>24} {'verified (primary)':>22}")
 
-        def row(label, df, key):
+        def row(label, df, key, name=None):
             g = df.groupby(key).agg(a=("any_addr", "any"), v=("any_verified", "any"),
                                     p=("prim_verified", "any"))
             n = len(g)
+            if name and n:
+                metric("C5", f"{name} linked to an address", f"{g['a'].sum() / n:.1%}", f"{int(g['a'].sum()):,} of {n:,}")
+                metric("C5", f"{name} linked to a verified address", f"{g['v'].sum() / n:.1%}",
+                       f"{int(g['v'].sum()):,} of {n:,}; verified = 2+ sources + Census match, or manual")
             out(f"{label:<28} {pct(int(g['a'].sum()), n):>22} {pct(int(g['v'].sum()), n):>24} "
                 f"{pct(int(g['p'].sum()), n):>22}")
 
-        row("NPI + TIN pairs", u, ["npi", "tin"])
-        row("NPIs (all)", u, "npi")
+        row("NPI + TIN pairs", u, ["npi", "tin"], "NPI + TIN pairs")
+        row("NPIs (all)", u, "npi", "NPIs")
         for et in ("Type 1 (individual)", "Type 2 (organization)", "unknown"):
             sub = u[u["etype"] == et]
             if len(sub):
                 row(f"  NPIs {et}", sub, "npi")
-        row("TINs (>= 1 NPI)", u, "tin")
+        row("TINs (>= 1 NPI)", u, "tin", "TINs")
         tin_all = u.groupby("tin").agg(v=("any_verified", "all"), a=("any_addr", "all"))
         out(f"{'TINs (every NPI)':<28} {pct(int(tin_all['a'].sum()), len(tin_all)):>22} "
             f"{pct(int(tin_all['v'].sum()), len(tin_all)):>24}")
@@ -218,6 +259,9 @@ def main():
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines), encoding="utf-8")
     print(f"\nwrote {path}")
+    summary = O / "summary_metrics.csv"
+    pd.DataFrame(metrics, columns=["step", "metric", "value", "note"]).sort_values("step", kind="stable").to_csv(summary, index=False)
+    print(f"wrote {summary}  ({len(metrics)} metrics)")
 
 
 if __name__ == "__main__":

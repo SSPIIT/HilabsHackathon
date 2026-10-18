@@ -11,8 +11,8 @@ stages:
       nfiles: 3
     - path: src/c1_parse_index.py
       hash: md5
-      md5: f84fa9411c453a1c9bd0d085288c72f8
-      size: 7755
+      md5: 2741faec1cf9e7a7154d8d76f181149b
+      size: 7872
     outs:
     - path: data/interim/c1_index_raw.csv
       hash: md5
@@ -28,8 +28,8 @@ stages:
       size: 1450263
     - path: src/c1_clean_index.py
       hash: md5
-      md5: c410a0ee063ed5e3c6ffc8020460f197
-      size: 5203
+      md5: 3fe2844b1bcd314469c8ccc28a23a13f
+      size: 5339
     outs:
     - path: data/interim/c1_cleaning_log.csv
       hash: md5
@@ -49,8 +49,8 @@ stages:
       size: 1450263
     - path: src/c1_group_by_plan_id.py
       hash: md5
-      md5: ab74a29e1140e18ff69f7f15a9f3996b
-      size: 3257
+      md5: efd112c9e1e5caa480c6322647184309
+      size: 3402
     outs:
     - path: data/interim/c1_by_plan_id_rows.csv
       hash: md5
@@ -70,8 +70,8 @@ stages:
       size: 1452359
     - path: src/c2_filter_california.py
       hash: md5
-      md5: d92d10bcebe60ed2e832953551edde5d
-      size: 7381
+      md5: 8899e4b259156d68fb394de458ac0289
+      size: 7491
     outs:
     - path: data/interim/c2_plans_ca.csv
       hash: md5
@@ -95,8 +95,8 @@ stages:
       size: 753674
     - path: src/c2_name_keyword_status.py
       hash: md5
-      md5: 3a4123e472ea897a7a29ef85cb17c81e
-      size: 3394
+      md5: 103b254f304180a2534d6123753261d2
+      size: 3539
     outs:
     - path: data/interim/c2_name_status.csv
       hash: md5
@@ -112,8 +112,8 @@ stages:
       size: 797371
     - path: src/c2_accept_eoa.py
       hash: md5
-      md5: 768822dc44bc7ac2d2ffae82eeefd9ca
-      size: 2845
+      md5: 08d01b69168ca6d9df0dc330fd0836a2
+      size: 2990
     outs:
     - path: data/interim/c2_name_status_eoa.csv
       hash: md5
@@ -130,8 +130,8 @@ stages:
       size: 792926
     - path: src/c2_manual_overrides.py
       hash: md5
-      md5: 25d8bcffaede743960b91a753e629399
-      size: 3802
+      md5: 70a68e7c3b7cc3f8da7c1a344d6486cc
+      size: 3947
     outs:
     - path: data/interim/c2_name_status_final.csv
       hash: md5
@@ -148,8 +148,8 @@ stages:
       size: 799696
     - path: src/c2_export_ppo_plans.py
       hash: md5
-      md5: 2307f081fd6ded5b73f48a57822eb039
-      size: 3197
+      md5: 7c7eb0ce0512e4b085ebbd60dfd58e56
+      size: 3328
     outs:
     - path: data/output/c2_ppo_plans_ca.csv
       hash: md5
@@ -165,8 +165,8 @@ stages:
       size: 119615
     - path: src/c3_download_in_network_files.py
       hash: md5
-      md5: a983c94a3c28ac922933b103498f6507
-      size: 7274
+      md5: 0f25eb436c6efb4bf1f734dc5c1136fc
+      size: 7390
     outs:
     - path: data/in-network-files
       hash: md5
@@ -185,8 +185,8 @@ stages:
       size: 701615514
     - path: src/c3_extract_providers.py
       hash: md5
-      md5: ccbfa51008779d89cfd8cb9479718ef3
-      size: 6282
+      md5: f62a8c534463003c1228e82b531ec185
+      size: 6399
     outs:
     - path: data/interim/c3_providers.csv
       hash: md5
@@ -202,8 +202,8 @@ stages:
       size: 522929
     - path: src/c3_nppes_lookup.py
       hash: md5
-      md5: 9322965a43447a6429865aa5059fec84
-      size: 7574
+      md5: f2ba2dfafb0424a34ff6688cbfa777ee
+      size: 7701
     outs:
     - path: data/interim/c3_nppes_addresses.csv
       hash: md5
@@ -234,8 +234,8 @@ stages:
       size: 5138
     - path: src/c3_grade_files.py
       hash: md5
-      md5: a86497b524f90e484fe1b8e49f6fc7b3
-      size: 33663
+      md5: 116ccaa521a28eb974cea218ab1cbaa4
+      size: 33758
     outs:
     - path: data/output/c3_file_grades.csv
       hash: md5
@@ -257,8 +257,8 @@ stages:
       size: 701615514
     - path: src/c4_extract_rates.py
       hash: md5
-      md5: edf2c67306a392ab4e7d120d4464bc58
-      size: 9019
+      md5: b6c460dc6ce9c35cfa0f8a524f52e9b3
+      size: 9139
     outs:
     - path: data/interim/c4_rates_extracted.csv
       hash: md5
@@ -275,12 +275,12 @@ stages:
       size: 222667299
     - path: src/c4_choose_rate.py
       hash: md5
-      md5: fc73bf4f7b88a93bcd1421765190808c
-      size: 10967
+      md5: 218795c4838b793721710c07ef88612f
+      size: 11098
     outs:
     - path: data/output/c4_rates.csv
       hash: md5
-      md5: 9cc990dd8332c448bd6f94fa10577b0a
+      md5: 21ae86dda84b1211b72da5a75873b3de
       size: 4629332
   c5_ca_zip_reference:
     cmd: python src/c5_ca_zip_reference.py --out 
@@ -288,8 +288,8 @@ stages:
     deps:
     - path: src/c5_ca_zip_reference.py
       hash: md5
-      md5: e34c85c6aac4028d34b85060f860046b
-      size: 2236
+      md5: f588cf1b1013bf65d37eeeb8f7c68452
+      size: 2373
     outs:
     - path: data/reference/ca_zip_reference.csv
       hash: md5
@@ -323,8 +323,8 @@ stages:
       size: 6440
     - path: src/c5_build_candidates.py
       hash: md5
-      md5: 870ec8c1b6f67845ee58d610d9b2e850
-      size: 18187
+      md5: 06ec8adbf4da6e685adaf8cb7f38bb14
+      size: 18252
     outs:
     - path: data/interim/c5_addresses_to_geocode.csv
       hash: md5
@@ -349,8 +349,8 @@ stages:
       size: 845989
     - path: src/c5_census_geocode.py
       hash: md5
-      md5: 98a3bc1bd712fd51cbde1109379d96ba
-      size: 7166
+      md5: 8a6a7a4294d9bc47350eb521881b6b1f
+      size: 7277
     outs:
     - path: data/interim/c5_geocoded.csv
       hash: md5
@@ -386,12 +386,12 @@ stages:
       size: 6440
     - path: src/c5_manual_addresses.py
       hash: md5
-      md5: d903b7664b7185b1852e76e6cf7e07da
-      size: 5709
+      md5: cc356a8225f0b9500b184fa4049cedac
+      size: 5791
     - path: src/c5_score_addresses.py
       hash: md5
-      md5: c05515509d907a46ed010c1be35a397c
-      size: 19192
+      md5: 3db73b31139805c49ecf74330433406b
+      size: 19273
     outs:
     - path: data/interim/c5_address_scores.csv
       hash: md5
@@ -434,12 +434,12 @@ stages:
       size: 6440
     - path: src/c5_report.py
       hash: md5
-      md5: 9db53b28f6bb3c53c32cffec39d543be
-      size: 7806
+      md5: 37933154a3ac0c163cd650c34c3d5c22
+      size: 7868
     - path: src/c5_score_addresses.py
       hash: md5
-      md5: c05515509d907a46ed010c1be35a397c
-      size: 19192
+      md5: 3db73b31139805c49ecf74330433406b
+      size: 19273
     outs:
     - path: data/output/c5_report.txt
       hash: md5
@@ -456,7 +456,7 @@ stages:
       size: 428458
     - path: data/output/c4_rates.csv
       hash: md5
-      md5: 9cc990dd8332c448bd6f94fa10577b0a
+      md5: 21ae86dda84b1211b72da5a75873b3de
       size: 4629332
     - path: data/output/c5_npi_tin_address.csv
       hash: md5
@@ -464,10 +464,86 @@ stages:
       size: 1422751
     - path: src/c6_build_rate_file.py
       hash: md5
-      md5: 4772efed64ae6cfcb9b99124b7f4c5f2
-      size: 11304
+      md5: da97bdf653e2b6c851bcea8d06df626d
+      size: 11459
     outs:
     - path: data/output/c6_provider_rate_file.csv
       hash: md5
       md5: e06e0f4420783ac5b15221c8e3a4b8bb
       size: 5337500
+  c6_coverage_report:
+    cmd: python src/coverage_report.py
+    deps:
+    - path: config/config.yaml
+      hash: md5
+      md5: 971a1d7182c020b7124c848938a6d3f5
+      size: 589
+    - path: data/interim/c1_index_raw.csv
+      hash: md5
+      md5: 8d6e167b35b975a985bfcb17d63064ff
+      size: 1450263
+    - path: data/interim/c1_plans.csv
+      hash: md5
+      md5: c515445937285ab6620b3621b6e54e0d
+      size: 1452359
+    - path: data/interim/c2_name_status_final.csv
+      hash: md5
+      md5: 465fe25c876341469de62f50bd5c8a9a
+      size: 799696
+    - path: data/interim/c2_plans_ca.csv
+      hash: md5
+      md5: 27a4610a12a8d7882402f1060a932906
+      size: 753674
+    - path: data/interim/c3_nppes_npi.csv
+      hash: md5
+      md5: bda3a494106acc787b39310f8fc90595
+      size: 428458
+    - path: data/interim/c3_providers.csv
+      hash: md5
+      md5: be719ec1911657c12f3b708d2c02bbec
+      size: 522929
+    - path: data/interim/c4_rates_extracted.csv
+      hash: md5
+      md5: 2267dea7a65696bd8e539910cd50d4af
+      size: 222667299
+    - path: data/interim/c5_npi_tin_address_long.csv
+      hash: md5
+      md5: e1c134f358bcae273bde8fc2ea86ab70
+      size: 1376941
+    - path: data/interim/c5_providers_clean.csv
+      hash: md5
+      md5: 984636c6d08dd111fc0e1b08c7b6bd43
+      size: 284690
+    - path: data/output/c2_ppo_plans_ca.csv
+      hash: md5
+      md5: 7090838dc727f7eddcc773f53c2118a8
+      size: 119615
+    - path: data/output/c3_file_grades.csv
+      hash: md5
+      md5: 10eb4a863e9cc4a08eb210e0c6884552
+      size: 1601
+    - path: data/output/c4_rates.csv
+      hash: md5
+      md5: 21ae86dda84b1211b72da5a75873b3de
+      size: 4629332
+    - path: data/output/c6_provider_rate_file.csv
+      hash: md5
+      md5: e06e0f4420783ac5b15221c8e3a4b8bb
+      size: 5337500
+    - path: src/coverage_report.py
+      hash: md5
+      md5: f187f09b7e0c74adc003c8f8cd2de22a
+      size: 14031
+    - path: src/pipeline_config.py
+      hash: md5
+      md5: e4420102e6eb58c620e75de1c8e80cfa
+      size: 560
+    outs:
+    - path: data/output/coverage_report.txt
+      hash: md5
+      md5: e03d732d179caa84248c172f04d120d6
+      size: 3324
+    - path: data/output/summary_metrics.csv
+      hash: md5
+      md5: 8d636fb51db5c5b1d774839e52e73405
+      size: 1485

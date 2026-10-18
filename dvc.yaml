@@ -207,3 +207,28 @@ stages:
       - data/interim/c3_nppes_npi.csv
     outs:
       - data/output/c6_provider_rate_file.csv
+
+  # ---------------------------------------------------------------- Coverage report + summary file
+  # Reads C1-C6 outputs, changes nothing; writes the funnel/linkage report and summary_metrics.csv.
+  c6_coverage_report:
+    cmd: python src/coverage_report.py
+    deps:
+      - src/coverage_report.py
+      - src/pipeline_config.py
+      - config/config.yaml
+      - data/interim/c1_index_raw.csv
+      - data/interim/c1_plans.csv
+      - data/interim/c2_plans_ca.csv
+      - data/interim/c2_name_status_final.csv
+      - data/output/c2_ppo_plans_ca.csv
+      - data/interim/c3_providers.csv
+      - data/interim/c3_nppes_npi.csv
+      - data/output/c3_file_grades.csv
+      - data/interim/c4_rates_extracted.csv
+      - data/output/c4_rates.csv
+      - data/interim/c5_providers_clean.csv
+      - data/interim/c5_npi_tin_address_long.csv
+      - data/output/c6_provider_rate_file.csv
+    outs:
+      - data/output/coverage_report.txt
+      - data/output/summary_metrics.csv
