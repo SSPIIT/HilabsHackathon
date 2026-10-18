@@ -13,6 +13,11 @@ Rules, in order of application:
                        service (RC 636 + J1885); the item name is ignored
   S3 RC without HCPCS  the revenue code alone is the service; item names are ignored
                        (Health Net repeats the same price list under every name)
+  S4 Same-meaning      modifiers that mean the same thing are grouped before comparing:
+     modifiers         95, GT, GQ, 93, FQ (all telehealth) -> TELEHEALTH; so 90833-95 and
+                       90833-95|GT are one service. The original values are kept in
+                       modifiers_in_file. Modifiers that change the service (26, TC, 25, 59...)
+                       stay separate.
   R1 Duplicates        same provider group + same price counts once
   R2 Fake prices       $0, negative or >= $999,999 removed, if a real price exists
   R3 Expired           expiry before the file date removed, if a current price exists
@@ -37,17 +42,26 @@ from datetime import date
 from pathlib import Path
 
 PLACEHOLDER_MAX = 999_999
+TELEHEALTH_MODIFIERS = ["95", "GT", "GQ", "93", "FQ"]     # all mean "delivered by telehealth"
 SERVICE = ("npi, tin, billing_code_type, billing_code, code_detail, modifiers, billing_class, "
            "pos_group, price_setting, negotiation_arrangement")
 
 SQL = """
 -- every price row, with the service columns filled
 CREATE OR REPLACE TABLE j AS
-SELECT *,
+SELECT * REPLACE (
+    -- S4: modifiers that mean the same thing are one value (telehealth: 95, GT, GQ, 93, FQ)
+    array_to_string(list_sort(list_distinct(list_transform(string_split(upper(modifiers), '|'),
+        m -> CASE WHEN trim(m) IN ({tele}) THEN 'TELEHEALTH' ELSE trim(m) END))), '|') AS modifiers),
+  modifiers AS modifiers_in_file,
   CASE WHEN upper(billing_code_type) = 'RC'
        THEN coalesce(trim(additional_information), '') ELSE '' END AS code_detail,
   TRY_CAST(negotiated_rate AS DOUBLE) AS rate
 FROM read_csv('{src}', header=true, all_varchar=true, nullstr='__none__');
+
+CREATE OR REPLACE TABLE mods AS
+SELECT {svc}, string_agg(DISTINCT nullif(modifiers_in_file, ''), ' ; ') AS modifiers_in_file
+FROM j GROUP BY ALL;
 
 -- R1: one row per service + provider group + price (+ type, expiry)
 CREATE OR REPLACE TABLE d AS
@@ -112,6 +126,7 @@ CREATE OR REPLACE TABLE final AS
 SELECT k.npi, k.tin, s0.tin_type,
        k.billing_code_type, k.billing_code, k.code_detail, s0.description, k.modifiers, k.billing_class,
        k.pos_group, k.price_setting, k.negotiation_arrangement,
+       coalesce(mods.modifiers_in_file, '') AS modifiers_in_file,
        k.negotiated_rate, k.negotiated_type, k.expiration_date,
        CASE
          WHEN s0.n_rates_found = 1 THEN 'single'
@@ -131,14 +146,14 @@ SELECT k.npi, k.tin, s0.tin_type,
          CASE WHEN k.negotiated_type = 'percentage' THEN 'percent_not_dollars' END) AS flag
 FROM kept2 k
 JOIN s0 USING ({svc}) JOIN s2 USING ({svc}) JOIN s3 USING ({svc})
-JOIN top USING ({svc}) JOIN cg USING ({svc});
+JOIN top USING ({svc}) JOIN cg USING ({svc}) JOIN mods USING ({svc});
 """
 
 
 def main():
     ap = argparse.ArgumentParser(description="C4 step 2: one rate per provider and service")
     ap.add_argument("--input", default="data/interim/c4_rates_extracted.csv", type=Path)
-    ap.add_argument("--out", default="data/output/c4_rates.csv", type=Path)
+    ap.add_argument("--out", default="data/interim/c4_rates.csv", type=Path)
     ap.add_argument("--file-date", default="", help="rate file last_updated_on (YYYY-MM-DD), used by R3")
     args = ap.parse_args()
     if not args.input.exists():
@@ -154,7 +169,7 @@ def main():
     con.execute(f"SET temp_directory='{tmp.as_posix()}'")
     print("choosing one rate per provider and service ...")
     con.execute(SQL.format(src=args.input.as_posix(), svc=SERVICE, ph=PLACEHOLDER_MAX,
-                           fdate=fdate))
+                           fdate=fdate, tele=", ".join(f"'{m}'" for m in TELEHEALTH_MODIFIERS)))
     con.execute(f"COPY (SELECT * FROM final ORDER BY {SERVICE}) TO '{args.out.as_posix()}' (HEADER, DELIMITER ',')")
 
     q = lambda s: con.execute(s).fetchall()

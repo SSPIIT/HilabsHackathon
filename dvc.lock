@@ -275,13 +275,13 @@ stages:
       size: 222667299
     - path: src/c4_choose_rate.py
       hash: md5
-      md5: 03cd8399ce12866c930683aabcee5192
-      size: 9833
+      md5: fc73bf4f7b88a93bcd1421765190808c
+      size: 10967
     outs:
     - path: data/output/c4_rates.csv
       hash: md5
-      md5: 5233cd38f9cfc53a8b72b478b565b7c0
-      size: 4529363
+      md5: 9cc990dd8332c448bd6f94fa10577b0a
+      size: 4629332
   c5_ca_zip_reference:
     cmd: python src/c5_ca_zip_reference.py --out 
       data/reference/ca_zip_reference.csv
@@ -456,8 +456,8 @@ stages:
       size: 428458
     - path: data/output/c4_rates.csv
       hash: md5
-      md5: 5233cd38f9cfc53a8b72b478b565b7c0
-      size: 4529363
+      md5: 9cc990dd8332c448bd6f94fa10577b0a
+      size: 4629332
     - path: data/output/c5_npi_tin_address.csv
       hash: md5
       md5: c79237657cffd01ce70dd8d223da7960
@@ -469,5 +469,5 @@ stages:
     outs:
     - path: data/output/c6_provider_rate_file.csv
       hash: md5
-      md5: c918740aa64b18c8d077f376b89d9cc5
-      size: 5316808
+      md5: e06e0f4420783ac5b15221c8e3a4b8bb
+      size: 5337500
