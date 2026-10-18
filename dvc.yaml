@@ -114,6 +114,24 @@ stages:
       - data/output/c3_file_grades.csv
       - data/output/c3_sensitivity.csv
 
+  # ---------------------------------------------------------------- C4 rates
+  c4_extract_rates:
+    cmd: python src/c4_extract_rates.py --input data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json --out data/interim/c4_rates_extracted.csv
+    deps:
+      - src/c4_extract_rates.py
+      - data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+    outs:
+      - data/interim/c4_rates_extracted.csv
+
+  # --file-date = the rate file's last_updated_on (2026-10-06), used by the choice rule
+  c4_choose_rate:
+    cmd: python src/c4_choose_rate.py --input data/interim/c4_rates_extracted.csv --out data/interim/c4_rates.csv --file-date 2026-10-06
+    deps:
+      - src/c4_choose_rate.py
+      - data/interim/c4_rates_extracted.csv
+    outs:
+      - data/interim/c4_rates.csv
+
   # ---------------------------------------------------------------- C5 addresses
   c5_ca_zip_reference:
     cmd: python src/c5_ca_zip_reference.py --out data/reference/ca_zip_reference.csv

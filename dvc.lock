@@ -245,3 +245,40 @@ stages:
       hash: md5
       md5: 0ef199121b7a41d507986fcf1b01eb48
       size: 860
+  c4_extract_rates:
+    cmd: python src/c4_extract_rates.py --input 
+      data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+      --out data/interim/c4_rates_extracted.csv
+    deps:
+    - path: 
+        data/in-network-files/2026-09-30_centene-management-company-llc_healthnet-ca_in-network.json
+      hash: md5
+      md5: dfe6872bf471b907e5a199858000a10f
+      size: 701615514
+    - path: src/c4_extract_rates.py
+      hash: md5
+      md5: edf2c67306a392ab4e7d120d4464bc58
+      size: 9019
+    outs:
+    - path: data/interim/c4_rates_extracted.csv
+      hash: md5
+      md5: 2267dea7a65696bd8e539910cd50d4af
+      size: 222667299
+  c4_choose_rate:
+    cmd: python src/c4_choose_rate.py --input 
+      data/interim/c4_rates_extracted.csv --out data/interim/c4_rates.csv 
+      --file-date 2026-10-06
+    deps:
+    - path: data/interim/c4_rates_extracted.csv
+      hash: md5
+      md5: 2267dea7a65696bd8e539910cd50d4af
+      size: 222667299
+    - path: src/c4_choose_rate.py
+      hash: md5
+      md5: 88be5bcdba8bd4b1b1546c579b44422a
+      size: 9834
+    outs:
+    - path: data/interim/c4_rates.csv
+      hash: md5
+      md5: 5233cd38f9cfc53a8b72b478b565b7c0
+      size: 4529363
